@@ -12,15 +12,11 @@ if(NOT MSVC)
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 endif()
 
-# link_directories(
-#   /home/phy/shared_dir/opt/lib
-# )
-
 # set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 find_package(Eigen3 REQUIRED)
-# find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(Protobuf REQUIRED)
-
 
 file(GLOB protobuf_files
 	modules/map/proto/*.proto
@@ -35,9 +31,6 @@ file(GLOB protobuf_files
 SET(PROTO_META_BASE_DIR ${CMAKE_CURRENT_BINARY_DIR})
 LIST(APPEND PROTO_FLAGS -I${CMAKE_CURRENT_SOURCE_DIR})
 
-# set(PROTO_SRCS ${CMAKE_CURRENT_BINARY_DIR})
-# set(PROTO_HDRS ${CMAKE_CURRENT_BINARY_DIR})
-
 set(PROTO_SRCS  )
 set(PROTO_HDRS  )
 FOREACH(FIL ${protobuf_files})
@@ -45,7 +38,6 @@ FOREACH(FIL ${protobuf_files})
 	string(REGEX REPLACE ".+/(.+)\\..*" "\\1" FILE_NAME ${FIL})
 	string(REGEX REPLACE "(.+)\\${FILE_NAME}.*" "\\1" FILE_PATH ${FIL})
 	string(REGEX MATCH "(modules/map/proto/|modules/map/relative_map/proto/|modules/perception/proto/|modules/common/proto/|modules/localization/proto/)" OUT_PATH ${FILE_PATH})
-
 	EXECUTE_PROCESS(
 		COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ${PROTO_FLAGS} --cpp_out=${PROTO_META_BASE_DIR} ${FIL}
 	)
@@ -55,12 +47,6 @@ FOREACH(FIL ${protobuf_files})
 	endif ()
 ENDFOREACH()
 
-# FOREACH(FIL ${PROTO_SRCS})
-# 	message("srcs " ${FIL})
-# ENDFOREACH()
-# FOREACH(FIL ${PROTO_HDRS})
-# 	message("hdrs " ${FIL})
-# ENDFOREACH()
 set(COMMON_SRCS_ROOT "modules/common")
 set(MATH_SRCS_ROOT "modules/common/math")
 set(ADAPTER_SRCS_ROOT "modules/map/hdmap/adapter")
@@ -68,12 +54,12 @@ set(HDMAP_SRCS_ROOT "modules/map/hdmap")
 set(PNC_MAP_SRCS_ROOT "modules/map/pnc_map")
 
 include_directories(
-	# /home/phy/shared_dir/opt/include
+	${Boost_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}
 	${Protobuf_INCLUDE_DIRS}
 	${CMAKE_CURRENT_BINARY_DIR}
 	${EIGEN3_INCLUDE_DIR}
-	# ${OpenCV_INCLUDE_DIRS}
+	${OpenCV_INCLUDE_DIRS}
 )
 
 if (EXISTS /usr/local/cuda/bin/nvcc OR EXISTS /usr/cuda/bin/nvcc)
@@ -159,7 +145,7 @@ add_library (hdmap SHARED
 	## common/util
 	${COMMON_SRCS_ROOT}/util/string_util.cc
 	${COMMON_SRCS_ROOT}/util/util.cc
-	${COMMON_SRCS_ROOT}/util/file.cc
+	# ${COMMON_SRCS_ROOT}/util/file.cc
 
 	## hdmap adapter
 	${ADAPTER_SRCS_ROOT}/coordinate_convert_tool.cc
@@ -178,22 +164,75 @@ add_library (hdmap SHARED
 	${HDMAP_SRCS_ROOT}/hdmap_common.cc
 	${HDMAP_SRCS_ROOT}/hdmap_impl.cc
 
-	${PNC_MAP_SRCS_ROOT}/path.cc
-	${PNC_MAP_SRCS_ROOT}/route_segments.cc
-	${PNC_MAP_SRCS_ROOT}/pnc_map.cc
+	# ${PNC_MAP_SRCS_ROOT}/path.cc
+	# ${PNC_MAP_SRCS_ROOT}/route_segments.cc
+	# ${PNC_MAP_SRCS_ROOT}/pnc_map.cc
 
-	modules/planning/common/planning_gflags.cc
-	modules/routing/common/routing_gflags.cc
+	modules/common/configs/config_gflags.cc
+	# modules/planning/common/planning_gflags.cc
+	# modules/routing/common/routing_gflags.cc
 )
 
 
 target_link_libraries(hdmap
-# ${OpenCV_LIBS}
+	${Boost_LIBRARIES}
 	pnc_cuda_util
 	tinyxml2
+	proj
 	${Protobuf_LIBRARIES}
 	glog
 	gflags
 )
 
+add_executable(test_api
+    example/test_api.cc
+)
 
+target_link_libraries(test_api
+	${Boost_LIBRARIES}
+	hdmap
+	tinyxml2
+	proj
+	${Protobuf_LIBRARIES}
+	glog
+	gflags
+)
+
+add_executable(test_map
+    example/test_map.cc
+)
+
+
+target_link_libraries(test_map
+	${OpenCV_LIBS}
+	${Boost_LIBRARIES}
+	hdmap
+	tinyxml2
+	proj
+	${Protobuf_LIBRARIES}
+	glog
+	gflags
+)
+
+install(TARGETS hdmap
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+EXECUTE_PROCESS(
+	COMMAND ../headers.sh
+)
+
+install(DIRECTORY include 
+	DESTINATION .
+	PATTERN "*.h"
+  PERMISSIONS OWNER_READ GROUP_READ
+)
+
+
+# install(TARGETS hdmap 
+# 	RUNTIME DESTINATION bin
+# 	LIBRARY DESTINATION lib
+# 	ARCHIVE DESTINATION lib
+# )
