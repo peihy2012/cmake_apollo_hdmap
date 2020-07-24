@@ -86,7 +86,7 @@ if (EXISTS /usr/local/cuda/bin/nvcc OR EXISTS /usr/cuda/bin/nvcc)
 	)	
 else ()
 	add_library (pnc_cuda_util STATIC
-		${PNC_MAP_SRCS_ROOT}/cuda_util.cu
+		${PNC_MAP_SRCS_ROOT}/cuda_util.cc
 	)
 	target_link_libraries(pnc_cuda_util
 		glog
