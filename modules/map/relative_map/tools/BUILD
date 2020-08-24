@@ -5,21 +5,26 @@ package(default_visibility = ["//visibility:public"])
 cc_binary(
     name = "navigation_dummy",
     srcs = ["navigation_dummy.cc"],
+    copts = ["-DMODULE_NAME=\\\"map\\\""],
     deps = [
-        "//modules/common",
+        "//cyber",
+        "//modules/common/adapters:adapter_gflags",
+        "//modules/common/util",
         "//modules/map/relative_map:relative_map_lib",
-        "@ros//:ros_common",
     ],
 )
 
 cc_binary(
     name = "navigator",
     srcs = ["navigator.cc"],
+    copts = ["-DMODULE_NAME=\\\"map\\\""],
     deps = [
-        "//modules/common",
+        "//cyber",
+        "//modules/common/adapters:adapter_gflags",
+        "//modules/common/util",
         "//modules/map/relative_map:relative_map_lib",
+        "//modules/map/relative_map/proto:navigator_config_proto",
         "//third_party/json",
-        "@ros//:ros_common",
     ],
 )
 

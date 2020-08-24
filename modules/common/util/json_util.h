@@ -14,8 +14,7 @@
  * limitations under the License.
  *****************************************************************************/
 
-#ifndef MODULES_COMMON_UTIL_JSON_UTIL_H_
-#define MODULES_COMMON_UTIL_JSON_UTIL_H_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -23,7 +22,7 @@
 #include "google/protobuf/message.h"
 #include "third_party/json/json.hpp"
 
-#include "modules/common/log.h"
+#include "cyber/common/log.h"
 
 namespace apollo {
 namespace common {
@@ -42,16 +41,16 @@ class JsonUtil {
    * @brief Get a string value from the given json[key].
    * @return Whether the field exists and is a valid string.
    */
-  static bool GetStringFromJson(const nlohmann::json &json,
-                                const std::string &key, std::string *value);
+  static bool GetString(const nlohmann::json &json, const std::string &key,
+                        std::string *value);
 
   /**
    * @brief Get a number value from the given json[key].
    * @return Whether the field exists and is a valid number.
    */
   template <class T>
-  static bool GetNumberFromJson(const nlohmann::json &json,
-                                const std::string &key, T *value) {
+  static bool GetNumber(const nlohmann::json &json, const std::string &key,
+                        T *value) {
     const auto iter = json.find(key);
     if (iter == json.end()) {
       AERROR << "The json has no such key: " << key;
@@ -66,16 +65,21 @@ class JsonUtil {
   }
 
   /**
+   * @brief Get a boolean value from the given json[key].
+   * @return Whether the field exists and is a valid boolean.
+   */
+  static bool GetBoolean(const nlohmann::json &json, const std::string &key,
+                         bool *value);
+
+  /**
    * @brief Get a string vector from the given json[key].
    * @return Whether the field exists and is a valid string vector.
    */
-  static bool GetStringVectorFromJson(const nlohmann::json &json,
-                                      const std::string &key,
-                                      std::vector<std::string> *value);
+  static bool GetStringVector(const nlohmann::json &json,
+                              const std::string &key,
+                              std::vector<std::string> *value);
 };
 
 }  // namespace util
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_COMMON_UTIL_JSON_UTIL_H_

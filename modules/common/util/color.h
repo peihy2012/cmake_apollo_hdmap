@@ -19,8 +19,7 @@
  * @brief Console color definitions
  */
 
-#ifndef MODULES_COMMON_UTIL_COLOR_H_
-#define MODULES_COMMON_UTIL_COLOR_H_
+#pragma once
 
 #include <cstdio>
 
@@ -39,5 +38,3 @@ constexpr char ANSI_RESET[] = "\x1b[0m";
 }  // namespace color
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_COMMON_UTIL_COLOR_H_

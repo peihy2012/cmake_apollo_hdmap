@@ -19,8 +19,7 @@
  * @brief Defines the Vec2d class.
  */
 
-#ifndef MODULES_COMMON_MATH_VEC2D_H_
-#define MODULES_COMMON_MATH_VEC2D_H_
+#pragma once
 
 #include <cmath>
 #include <string>
@@ -90,6 +89,9 @@ class Vec2d {
   //! rotate the vector by angle.
   Vec2d rotate(const double angle) const;
 
+  //! rotate the vector itself by angle.
+  void SelfRotate(const double angle);
+
   //! Sums two Vec2d
   Vec2d operator+(const Vec2d &other) const;
 
@@ -126,10 +128,8 @@ class Vec2d {
 };
 
 //! Multiplies the given Vec2d by a given scalar
-// Vec2d operator*(const double ratio, const Vec2d &vec);
+Vec2d operator*(const double ratio, const Vec2d &vec);
 
 }  // namespace math
 }  // namespace common
 }  // namespace apollo
-
-#endif /* MODULES_COMMON_MATH_VEC2D_H_ */

@@ -16,62 +16,22 @@
 
 #include "modules/common/monitor_log/monitor_log_buffer.h"
 
-#include "modules/common/log.h"
+#include "cyber/common/log.h"
 #include "modules/common/monitor_log/monitor_logger.h"
 
 namespace apollo {
 namespace common {
 namespace monitor {
 
-MonitorLogBuffer::MonitorLogBuffer(MonitorLogger *logger) : logger_(logger) {}
-
-void MonitorLogBuffer::PrintLog() {
-  if (monitor_msg_items_.empty()) {
-    return;
-  }
-  const auto level = monitor_msg_items_.back().first;
-  const auto &msg = monitor_msg_items_.back().second;
-  switch (level) {
-    case MonitorMessageItem::INFO:
-      AINFO << msg;
-      break;
-    case MonitorMessageItem::WARN:
-      AWARN << msg;
-      break;
-    case MonitorMessageItem::ERROR:
-      AERROR << msg;
-      break;
-    case MonitorMessageItem::FATAL:
-      AFATAL << msg;
-      break;
-    default:
-      AERROR << "[unknown monitor level]: " << msg;
-  }
-}
+MonitorLogBuffer::MonitorLogBuffer(
+    const MonitorMessageItem::MessageSource &source)
+    : source_(source) {}
 
 void MonitorLogBuffer::Publish() {
-  if (!monitor_msg_items_.empty() && logger_) {
-    logger_->Publish(monitor_msg_items_);
+  if (!monitor_msg_items_.empty()) {
+    logger_->Publish(source_, monitor_msg_items_);
     monitor_msg_items_.clear();
     level_ = MonitorMessageItem::INFO;
-  }
-}
-
-MonitorLogBuffer &MonitorLogBuffer::operator<<(const std::string &msg) {
-  if (monitor_msg_items_.empty() || monitor_msg_items_.back().first != level_) {
-    AddMonitorMsgItem(level_, msg);
-  } else {
-    monitor_msg_items_.back().second += msg;
-  }
-  return *this;
-}
-
-MonitorLogBuffer &MonitorLogBuffer::operator<<(const char *msg) {
-  if (msg) {
-    std::string msg_str(msg);
-    return operator<<(msg_str);
-  } else {
-    return *this;
   }
 }
 

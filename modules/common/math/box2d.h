@@ -20,8 +20,7 @@
  *        as opposed to what happens in euler_angles_zxy.h (Right/Forward).
  */
 
-#ifndef MODULES_COMMON_MATH_BOX2D_H_
-#define MODULES_COMMON_MATH_BOX2D_H_
+#pragma once
 
 #include <limits>
 #include <string>
@@ -250,7 +249,7 @@ class Box2d {
    * @brief Gets a human-readable description of the box
    * @return A debug-string
    */
-//   std::string DebugString() const;
+  std::string DebugString() const;
 
   void InitCorners();
 
@@ -271,14 +270,12 @@ class Box2d {
 
   std::vector<Vec2d> corners_;
 
-  double max_x_ = std::numeric_limits<double>::min();
+  double max_x_ = std::numeric_limits<double>::lowest();
   double min_x_ = std::numeric_limits<double>::max();
-  double max_y_ = std::numeric_limits<double>::min();
+  double max_y_ = std::numeric_limits<double>::lowest();
   double min_y_ = std::numeric_limits<double>::max();
 };
 
 }  // namespace math
 }  // namespace common
 }  // namespace apollo
-
-#endif /* MODULES_COMMON_MATH_BOX2D_H_ */

@@ -14,10 +14,6 @@ limitations under the License.
 =========================================================================*/
 #include "modules/map/hdmap/adapter/xml_parser/signals_xml_parser.h"
 
-#include <iomanip>
-#include <string>
-#include <vector>
-
 #include "modules/map/hdmap/adapter/xml_parser/util_xml_parser.h"
 
 namespace apollo {
@@ -54,6 +50,27 @@ Status SignalsXmlParser::ParseTrafficLights(
       PbSignalType signal_layout_type;
       ToPbSignalType(layout_type, &signal_layout_type);
       traffic_light.set_type(signal_layout_type);
+
+      auto sign_infos_node = signal_node->FirstChildElement("signInfos");
+      if (sign_infos_node != nullptr) {
+        auto sign_info_node = sign_infos_node->FirstChildElement("signInfo");
+        while (sign_info_node != nullptr) {
+          std::string sign_info_type;
+          checker = UtilXmlParser::QueryStringAttribute(*sign_info_node, "type",
+                                                        &sign_info_type);
+          if (checker != tinyxml2::XML_SUCCESS) {
+            std::string err_msg = "Error parse sign info type.";
+            return Status(apollo::common::ErrorCode::HDMAP_DATA_ERROR, err_msg);
+          }
+
+          auto sign_info = traffic_light.add_sign_info();
+          PbSignInfoType pb_sign_info_type;
+          to_pb_sign_info_type(sign_info_type, &pb_sign_info_type);
+          sign_info->set_type(pb_sign_info_type);
+
+          sign_info_node = sign_info_node->NextSiblingElement("signInfo");
+        }
+      }
 
       PbPolygon* polygon = traffic_light.mutable_boundary();
       auto outline_node = signal_node->FirstChildElement("outline");
@@ -102,7 +119,7 @@ Status SignalsXmlParser::ParseTrafficLights(
           std::string stop_line_id;
           int checker = UtilXmlParser::QueryStringAttribute(*sub_node, "id",
                                                             &stop_line_id);
-          CHECK(checker == tinyxml2::XML_SUCCESS);
+          ACHECK(checker == tinyxml2::XML_SUCCESS);
           trafficlight_internal.stop_line_ids.insert(stop_line_id);
           sub_node = sub_node->NextSiblingElement("objectReference");
         }
@@ -169,6 +186,46 @@ Status SignalsXmlParser::ToPbSubSignalType(const std::string& xml_type,
   return Status::OK();
 }
 
+Status SignalsXmlParser::to_pb_sign_info_type(const std::string& xml_type,
+                                              PbSignInfoType* sign_info_type) {
+  CHECK_NOTNULL(sign_info_type);
+
+  std::string upper_str = UtilXmlParser::ToUpper(xml_type);
+
+  if (upper_str == "NORIGHTTURNONRED") {
+    *sign_info_type = hdmap::SignInfo::NO_RIGHT_TURN_ON_RED;
+  } else {
+    std::string err_msg = "Error or unsupport stop sign type";
+    return Status(apollo::common::ErrorCode::HDMAP_DATA_ERROR, err_msg);
+  }
+  return Status::OK();
+}
+
+Status SignalsXmlParser::ToPbStopSignType(const std::string& xml_type,
+                                          PbStopSignType* stop_type) {
+  CHECK_NOTNULL(stop_type);
+
+  std::string upper_str = UtilXmlParser::ToUpper(xml_type);
+
+  if (upper_str == "UNKNOWN") {
+    *stop_type = hdmap::StopSign::UNKNOWN;
+  } else if (upper_str == "ONEWAY") {
+    *stop_type = hdmap::StopSign::ONE_WAY;
+  } else if (upper_str == "TWOWAY") {
+    *stop_type = hdmap::StopSign::TWO_WAY;
+  } else if (upper_str == "THREEWAY") {
+    *stop_type = hdmap::StopSign::THREE_WAY;
+  } else if (upper_str == "FOURWAY") {
+    *stop_type = hdmap::StopSign::FOUR_WAY;
+  } else if (upper_str == "ALLWAY") {
+    *stop_type = hdmap::StopSign::ALL_WAY;
+  } else {
+    std::string err_msg = "Error or unsupport stop sign type";
+    return Status(apollo::common::ErrorCode::HDMAP_DATA_ERROR, err_msg);
+  }
+  return Status::OK();
+}
+
 Status SignalsXmlParser::ParseStopSigns(
     const tinyxml2::XMLElement& xml_node,
     std::vector<StopSignInternal>* stop_signs) {
@@ -199,15 +256,30 @@ Status SignalsXmlParser::ParseStopSigns(
         sub_node = sub_node->FirstChildElement("objectReference");
         while (sub_node) {
           std::string stop_line_id;
-          int checker = UtilXmlParser::QueryStringAttribute(*sub_node,
-                                                            "id",
+          int checker = UtilXmlParser::QueryStringAttribute(*sub_node, "id",
                                                             &stop_line_id);
-          CHECK(checker == tinyxml2::XML_SUCCESS);
+          ACHECK(checker == tinyxml2::XML_SUCCESS);
           stop_sign_internal.stop_line_ids.insert(stop_line_id);
 
           sub_node = sub_node->NextSiblingElement("objectReference");
         }
       }
+
+      sub_node = signal_node->FirstChildElement("attribute");
+      if (sub_node) {
+        std::string stop_type;
+        int checker = UtilXmlParser::QueryStringAttribute(*sub_node, "stopType",
+                                                          &stop_type);
+        if (checker != tinyxml2::XML_SUCCESS) {
+          std::string err_msg = "Error parse stop type.";
+          return Status(apollo::common::ErrorCode::HDMAP_DATA_ERROR, err_msg);
+        }
+
+        PbStopSignType pb_stop_type;
+        ToPbStopSignType(stop_type, &pb_stop_type);
+        stop_sign_internal.stop_sign.set_type(pb_stop_type);
+      }
+
       stop_signs->emplace_back(stop_sign_internal);
     }
 
@@ -247,7 +319,7 @@ Status SignalsXmlParser::ParseYieldSigns(
           std::string stop_line_id;
           int checker = UtilXmlParser::QueryStringAttribute(*sub_node, "id",
                                                             &stop_line_id);
-          CHECK(checker == tinyxml2::XML_SUCCESS);
+          ACHECK(checker == tinyxml2::XML_SUCCESS);
           yield_sign_internal.stop_line_ids.insert(stop_line_id);
 
           sub_node = sub_node->NextSiblingElement("objectReference");

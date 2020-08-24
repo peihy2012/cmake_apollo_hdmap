@@ -18,13 +18,12 @@
  * @file
  **/
 
-#ifndef MODULES_COMMON_MATH_HERMITE_SPLINE_H_
-#define MODULES_COMMON_MATH_HERMITE_SPLINE_H_
+#pragma once
 
 #include <array>
 #include <utility>
 
-#include "modules/common/log.h"
+#include "cyber/common/log.h"
 
 namespace apollo {
 namespace common {
@@ -57,7 +56,7 @@ inline HermiteSpline<T, N>::HermiteSpline(std::array<T, (N + 1) / 2> x0,
                                           std::array<T, (N + 1) / 2> x1,
                                           const double z0, const double z1)
     : x0_(std::move(x0)), x1_(std::move(x1)), z0_(z0), delta_z_(z1 - z0) {
-  CHECK(N == 3 || N == 5)
+  ACHECK(N == 3 || N == 5)
       << "Error: currently we only support cubic and quintic hermite splines!";
 }
 
@@ -204,5 +203,3 @@ inline T HermiteSpline<T, N>::Evaluate(const std::uint32_t order,
 }  // namespace math
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_COMMON_MATH_HERMITE_SPLINE_H_

@@ -19,14 +19,15 @@
  * @brief Meta programming for computing factorial
  */
 
-#ifndef MODULES_COMMON_MATH_FACTORIAL_H_
-#define MODULES_COMMON_MATH_FACTORIAL_H_
+#pragma once
+
+#include <cstdint>
 
 namespace apollo {
 namespace common {
 namespace math {
 
-template <int N>
+template <uint64_t N>
 struct Factorial {
   enum { value = N * Factorial<N - 1>::value };
 };
@@ -39,5 +40,3 @@ struct Factorial<0> {
 }  // namespace math
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_COMMON_MATH_FACTORIAL_H_

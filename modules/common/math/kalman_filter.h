@@ -19,15 +19,14 @@
  * @brief Defines the templated KalmanFilter class.
  */
 
-#ifndef MODULES_COMMON_MATH_KALMAN_FILTER_H_
-#define MODULES_COMMON_MATH_KALMAN_FILTER_H_
+#pragma once
 
 #include <sstream>
 #include <string>
 
 #include "Eigen/Dense"
 
-#include "modules/common/log.h"
+#include "cyber/common/log.h"
 #include "modules/common/math/matrix_operations.h"
 
 /**
@@ -255,7 +254,7 @@ class KalmanFilter {
 template <typename T, unsigned int XN, unsigned int ZN, unsigned int UN>
 inline void KalmanFilter<T, XN, ZN, UN>::Predict(
     const Eigen::Matrix<T, UN, 1> &u) {
-  CHECK(is_initialized_);
+  ACHECK(is_initialized_);
 
   x_ = F_ * x_ + B_ * u;
 
@@ -265,16 +264,18 @@ inline void KalmanFilter<T, XN, ZN, UN>::Predict(
 template <typename T, unsigned int XN, unsigned int ZN, unsigned int UN>
 inline void KalmanFilter<T, XN, ZN, UN>::Correct(
     const Eigen::Matrix<T, ZN, 1> &z) {
-  CHECK(is_initialized_);
+  ACHECK(is_initialized_);
   y_ = z - H_ * x_;
 
-  S_ = H_ * P_ * H_.transpose() + R_;
+  S_ = static_cast<Eigen::Matrix<T, ZN, ZN>>(H_ * P_ * H_.transpose() + R_);
 
-  K_ = P_ * H_.transpose() * PseudoInverse<T, ZN>(S_);
+  K_ = static_cast<Eigen::Matrix<T, XN, ZN>>(P_ * H_.transpose() *
+                                             PseudoInverse<T, ZN>(S_));
 
   x_ = x_ + K_ * y_;
 
-  P_ = (Eigen::Matrix<T, XN, XN>::Identity() - K_ * H_) * P_;
+  P_ = static_cast<Eigen::Matrix<T, XN, XN>>(
+      (Eigen::Matrix<T, XN, XN>::Identity() - K_ * H_) * P_);
 }
 
 template <typename T, unsigned int XN, unsigned int ZN, unsigned int UN>
@@ -294,5 +295,3 @@ inline std::string KalmanFilter<T, XN, ZN, UN>::DebugString() const {
 }  // namespace math
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_COMMON_MATH_KALMAN_FILTER_H_

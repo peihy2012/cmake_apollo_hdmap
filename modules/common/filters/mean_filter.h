@@ -19,8 +19,7 @@
  * @brief Defines the MeanFilter class.
  */
 
-#ifndef MODULES_COMMON_FILTERS_MEAN_FILTER_H_
-#define MODULES_COMMON_FILTERS_MEAN_FILTER_H_
+#pragma once
 
 #include <cstdint>
 #include <deque>
@@ -85,5 +84,3 @@ class MeanFilter {
 
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_COMMON_FILTERS_MEAN_FILTER_H_

@@ -21,18 +21,20 @@
  * currently our assumption is that every timestamp will be of a
  * precision at 1us.
  */
-#ifndef MODULES_COMMON_TIME_CLOCK_H_
-#define MODULES_COMMON_TIME_CLOCK_H_
+#pragma once
 
 #include <atomic>
 #include <chrono>
 #include <stdexcept>
 #include <type_traits>
 
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "cyber/common/macros.h"
+#include "cyber/time/time.h"
+
+#include "cyber/common/log.h"
 #include "modules/common/configs/config_gflags.h"
-#include "modules/common/log.h"
-#include "modules/common/macro.h"
-#include "ros/include/ros/ros.h"
 
 /**
  * @namespace apollo::common::time
@@ -41,93 +43,6 @@
 namespace apollo {
 namespace common {
 namespace time {
-
-/**
- * @class Duration
- * @brief the default Duration is of precision nanoseconds (1e-9 seconds).
- */
-using Duration = std::chrono::nanoseconds;
-
-/**
- * @class Timestamp
- * @brief the default timestamp uses std::chrono::system_clock. The
- * system_clock is a system-wide realtime clock.
- */
-using Timestamp = std::chrono::time_point<std::chrono::system_clock, Duration>;
-
-static_assert(
-    sizeof(std::chrono::nanoseconds) >= sizeof(int64_t),
-    "The underlying type of the nanoseconds should be at least 64 bits.");
-
-using nanos = std::chrono::nanoseconds;
-using micros = std::chrono::microseconds;
-using millis = std::chrono::milliseconds;
-using seconds = std::chrono::seconds;
-using minutes = std::chrono::minutes;
-using hours = std::chrono::hours;
-
-/**
- * @brief converts the input duration (nanos) to a 64 bit integer, with
- * the unit specified by PrecisionDuration.
- * @param duration the input duration that needs to be converted to integer.
- * @return an integer representing the duration in the specified unit.
- */
-template <typename PrecisionDuration>
-int64_t AsInt64(const Duration &duration) {
-  return std::chrono::duration_cast<PrecisionDuration>(duration).count();
-}
-
-/**
- * @brief converts the input timestamp (nanos) to a 64 bit integer, with
- * the unit specified by PrecisionDuration.
- * @param timestamp the input timestamp that needs to be converted to integer.
- * @return an integer representing the timestamp in the specified unit.
- */
-template <typename PrecisionDuration>
-int64_t AsInt64(const Timestamp &timestamp) {
-  return AsInt64<PrecisionDuration>(timestamp.time_since_epoch());
-}
-
-/**
- * @brief converts the input duration (nanos) to a double in seconds.
- * The original precision will be preserved.
- * @param duration the input duration that needs to be converted.
- * @return a double in seconds.
- */
-inline double ToSecond(const Duration &duration) {
-  return static_cast<double>(AsInt64<nanos>(duration)) * 1e-9;
-}
-
-/**
- * @brief converts the input timestamp (nanos) to a double in seconds.
- * The original precision will be preserved.
- * @param timestamp the input timestamp that needs to be converted.
- * @return a double representing the same timestamp in seconds.
- */
-inline double ToSecond(const Timestamp &timestamp) {
-  return static_cast<double>(AsInt64<nanos>(timestamp.time_since_epoch())) *
-         1e-9;
-}
-
-/**
- * @brief converts the integer-represented timestamp to \class Timestamp.
- * @return a Timestamp object.
- */
-template <typename PrecisionDuration>
-inline Timestamp FromInt64(int64_t timestamp_value) {
-  return Timestamp(
-      std::chrono::duration_cast<nanos>(PrecisionDuration(timestamp_value)));
-}
-
-/**
- * @brief converts the double to \class Timestamp. The input double has
- * a unit of seconds.
- * @return a Timestamp object.
- */
-inline Timestamp From(double timestamp_value) {
-  int64_t nanos_value = static_cast<int64_t>(timestamp_value * 1e9);
-  return FromInt64<nanos>(nanos_value);
-}
 
 /**
  * @class Clock
@@ -152,89 +67,69 @@ class Clock {
   enum ClockMode {
     SYSTEM = 0,
     MOCK = 1,
-    ROS = 2,
+    CYBER = 2,
   };
 
   /**
-   * @brief gets the current timestamp.
-   * @return a Timestamp object representing the current time.
+   * @brief get current time.
+   * @return an absl::Time object representing the current time. Check
+   * https://abseil.io/docs/cpp/guides/time for usage.
    */
-  static Timestamp Now() {
+  static absl::Time Now() {
     switch (mode()) {
       case ClockMode::SYSTEM:
-        return SystemNow();
+        return absl::Now();
       case ClockMode::MOCK:
-        return instance()->mock_now_;
-      case ClockMode::ROS:
-        return From(ros::Time::now().toSec());
+        return Instance()->mock_now_;
+      case ClockMode::CYBER:
+        break;
       default:
         AFATAL << "Unsupported clock mode: " << mode();
     }
-    return From(ros::Time::now().toSec());
+    return absl::FromUnixNanos(cyber::Time::Now().ToNanosecond());
   }
 
   /**
    * @brief gets the current time in second.
    * @return the current time in second.
    */
-  static double NowInSeconds() { return ToSecond(Clock::Now()); }
+  static double NowInSeconds() {
+    return static_cast<double>(absl::ToUnixNanos(Now())) / 1e9;
+  }
 
   /**
    * @brief Set the behavior of the \class Clock.
    * @param The new clock mode to be set.
    */
-  static void SetMode(ClockMode mode) { instance()->mode_ = mode; }
+  static void SetMode(ClockMode mode) { Instance()->mode_ = mode; }
 
   /**
    * @brief Gets the current clock mode.
    * @return The current clock mode.
    */
-  static ClockMode mode() { return instance()->mode_; }
+  static ClockMode mode() { return Instance()->mode_; }
 
   /**
    * @brief This is for mock clock mode only. It will set the timestamp
    * for the mock clock.
    */
-  static void SetNow(const Duration &duration) {
-    Clock *clock = instance();
+  static void SetNow(const absl::Time &now) {
+    auto clock = Instance();
     if (clock->mode_ != ClockMode::MOCK) {
       AFATAL << "Cannot set now when clock mode is not MOCK!";
     }
-    clock->mock_now_ = Timestamp(duration);
+    clock->mock_now_ = now;
   }
 
   /**
    * @brief This is for mock clock mode only. It will set the timestamp
    * for the mock clock with UNIX timestamp in seconds.
    */
-  static void SetNowInSeconds(double seconds) {
-    Clock *clock = instance();
-    if (clock->mode_ != ClockMode::MOCK) {
-      AFATAL << "Cannot set now when clock mode is not MOCK!";
-    }
-    std::chrono::duration<double> duration_sec(seconds);
-    clock->mock_now_ =
-        Timestamp(std::chrono::duration_cast<Duration>(duration_sec));
+  static void SetNowInSeconds(const double seconds) {
+    SetNow(absl::FromUnixNanos(static_cast<int64_t>(seconds * 1e9)));
   }
 
  private:
-  /**
-   * @brief constructs the \class Clock instance
-   * @param mode the desired clock mode
-   */
-  explicit Clock(ClockMode mode) : mode_(mode), mock_now_(Timestamp()) {
-    ros::Time::init();
-  }
-
-  /**
-   * @brief Returns the current timestamp based on the system clock.
-   * @return the current timestamp based on the system clock.
-   */
-  static Timestamp SystemNow() {
-    return std::chrono::time_point_cast<Duration>(
-        std::chrono::system_clock::now());
-  }
-
   /// NOTE: Unless mode_ and mock_now_ are guarded by a
   /// lock or become atomic, having multiple threads calling mock
   /// clock related functions are STRICTLY PROHIBITED.
@@ -243,16 +138,16 @@ class Clock {
   /// clock mode or the ROS time mode.
   ClockMode mode_;
 
-  /// Stores the currently set timestamp, which serves mock clock
-  /// queries.
-  Timestamp mock_now_;
+  /// Stores the currently set timestamp, which serves mock clock queries.
+  absl::Time mock_now_;
 
   /// Explicitly disable default and move/copy constructors.
-  DECLARE_SINGLETON(Clock);
+  DECLARE_SINGLETON(Clock)
 };
 
-inline Clock::Clock()
-    : Clock(FLAGS_use_ros_time ? ClockMode::ROS : ClockMode::SYSTEM) {}
+inline Clock::Clock() {
+  mode_ = FLAGS_use_cyber_time ? ClockMode::CYBER : ClockMode::SYSTEM;
+}
 
 // Measure run time of a code block, mostly for debugging purpose.
 // Example usage:
@@ -284,5 +179,3 @@ inline Clock::Clock()
 }  // namespace time
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_COMMON_TIME_CLOCK_H_

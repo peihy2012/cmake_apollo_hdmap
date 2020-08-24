@@ -18,13 +18,15 @@
  * @file
  */
 
-#ifndef MODULES_CONFIGS_VEHICLE_CONFIG_H_
-#define MODULES_CONFIGS_VEHICLE_CONFIG_H_
+#pragma once
 
 #include <string>
 
 #include "modules/common/configs/proto/vehicle_config.pb.h"
-#include "modules/common/macro.h"
+#include "modules/common/proto/pnc_point.pb.h"
+
+#include "cyber/common/macros.h"
+#include "modules/common/math/box2d.h"
 
 /**
  * @namespace apollo::common
@@ -101,19 +103,25 @@ class VehicleConfigHelper {
    * D. XO is VehicleParam.min_turn_radius(), X to AD is left_edge_to_center,
    * X to AB is VehicleParam.front_edge_to_center(). Then
    *     AO = sqrt((XO +  left_edge_to_center) ^2 + front_edge_to_center^2).
-   * @return AO in the above figure, which is the maximum turn radius when the
+   * @return AO in the above figure, which is the minimum turn radius when the
    * vehicle turns with maximum steering angle
    */
 
   static double MinSafeTurnRadius();
 
+  /**
+   * @brief Get the box (four corners: ABCD) of the vehicle.
+   * @param path_point of a vehicle (which contains point X and heading).
+   * @return a box2d which contains the ABCD points info.
+   */
+  static common::math::Box2d GetBoundingBox(
+      const common::PathPoint &path_point);
+
  private:
   static VehicleConfig vehicle_config_;
   static bool is_init_;
-  DECLARE_SINGLETON(VehicleConfigHelper);
+  DECLARE_SINGLETON(VehicleConfigHelper)
 };
 
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_CONFIGS_VEHICLE_CONFIG_H_

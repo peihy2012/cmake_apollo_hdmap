@@ -21,13 +21,11 @@
 
 #include "modules/map/relative_map/navigation_lane.h"
 
-#include <string>
-#include <vector>
 #include "gtest/gtest.h"
 #include "third_party/json/json.hpp"
 
+#include "cyber/common/file.h"
 #include "modules/canbus/proto/chassis.pb.h"
-#include "modules/common/adapters/adapter_manager.h"
 #include "modules/common/vehicle_state/vehicle_state_provider.h"
 #include "modules/map/relative_map/common/relative_map_gflags.h"
 #include "modules/map/relative_map/proto/navigation.pb.h"
@@ -37,9 +35,6 @@ namespace apollo {
 namespace relative_map {
 
 using apollo::common::VehicleStateProvider;
-using apollo::common::adapter::AdapterConfig;
-using apollo::common::adapter::AdapterManager;
-using apollo::common::adapter::AdapterManagerConfig;
 using apollo::relative_map::NavigationInfo;
 using apollo::relative_map::NavigationLane;
 using apollo::relative_map::NavigationPath;
@@ -97,14 +92,8 @@ bool GenerateNavigationInfo(
 class NavigationLaneTest : public testing::Test {
  public:
   virtual void SetUp() {
-    FLAGS_use_navigation_mode = true;
-    FLAGS_use_navigation_with_utm = false;
-    common::adapter::AdapterManagerConfig adapter_conf;
     RelativeMapConfig config;
-
-    EXPECT_TRUE(common::util::GetProtoFromFile(
-        FLAGS_relative_map_adapter_config_filename, &adapter_conf));
-    EXPECT_TRUE(common::util::GetProtoFromFile(
+    EXPECT_TRUE(cyber::common::GetProtoFromFile(
         FLAGS_relative_map_config_filename, &config));
 
     navigation_lane_.SetConfig(config.navigation_lane());
@@ -116,11 +105,11 @@ class NavigationLaneTest : public testing::Test {
 
     localization::LocalizationEstimate localization;
     canbus::Chassis chassis;
-    EXPECT_TRUE(common::util::GetProtoFromFile(
+    EXPECT_TRUE(cyber::common::GetProtoFromFile(
         data_file_dir_ + "localization_info.pb.txt", &localization));
-    EXPECT_TRUE(common::util::GetProtoFromFile(
+    EXPECT_TRUE(cyber::common::GetProtoFromFile(
         data_file_dir_ + "chassis_info.pb.txt", &chassis));
-    VehicleStateProvider::instance()->Update(localization, chassis);
+    VehicleStateProvider::Instance()->Update(localization, chassis);
   }
 
  protected:

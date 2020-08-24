@@ -18,16 +18,11 @@
  * @file:
  **/
 
-#ifndef MODULES_MAP_PNC_MAP_PNC_MAP_H_
-#define MODULES_MAP_PNC_MAP_PNC_MAP_H_
+#pragma once
 
-#include <array>
-#include <limits>
 #include <list>
-#include <memory>
 #include <string>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 #include "gflags/gflags.h"
@@ -57,9 +52,6 @@ class PncMap {
   bool UpdateRoutingResponse(const routing::RoutingResponse &routing_response);
 
   const routing::RoutingResponse &routing_response() const;
-
-  static bool CreatePathFromLaneSegments(const RouteSegments &segments,
-                                         Path *const path);
 
   static double LookForwardDistance(const double velocity);
 
@@ -234,5 +226,3 @@ class PncMap {
 
 }  // namespace hdmap
 }  // namespace apollo
-
-#endif  // MODULES_MAP_PNC_MAP_PNC_MAP_H_

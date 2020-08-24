@@ -14,28 +14,29 @@
  * limitations under the License.
  *****************************************************************************/
 
-#ifndef MODULES_MAP_HDMAP_HDMAP_H_
-#define MODULES_MAP_HDMAP_HDMAP_H_
+#pragma once
 
-#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
-#include "modules/common/macro.h"
+#include "cyber/common/macros.h"
+
 #include "modules/common/proto/geometry.pb.h"
-#include "modules/map/hdmap/hdmap_common.h"
-#include "modules/map/hdmap/hdmap_impl.h"
 #include "modules/map/proto/map_clear_area.pb.h"
 #include "modules/map/proto/map_crosswalk.pb.h"
 #include "modules/map/proto/map_junction.pb.h"
 #include "modules/map/proto/map_lane.pb.h"
 #include "modules/map/proto/map_overlap.pb.h"
+#include "modules/map/proto/map_parking_space.pb.h"
 #include "modules/map/proto/map_road.pb.h"
 #include "modules/map/proto/map_signal.pb.h"
 #include "modules/map/proto/map_speed_bump.pb.h"
 #include "modules/map/proto/map_stop_sign.pb.h"
 #include "modules/map/proto/map_yield_sign.pb.h"
-#include "modules/map/proto/map_parking_space.pb.h"
+
+#include "modules/map/hdmap/hdmap_common.h"
+#include "modules/map/hdmap/hdmap_impl.h"
 
 /**
  * @namespace apollo::hdmap
@@ -76,6 +77,7 @@ class HDMap {
   OverlapInfoConstPtr GetOverlapById(const Id& id) const;
   RoadInfoConstPtr GetRoadById(const Id& id) const;
   ParkingSpaceInfoConstPtr GetParkingSpaceById(const Id& id) const;
+  PNCJunctionInfoConstPtr GetPNCJunctionById(const Id& id) const;
 
   /**
    * @brief get all lanes in certain range
@@ -165,10 +167,19 @@ class HDMap {
    * @param parking spaces store all clear areas in target range
    * @return 0:success, otherwise failed
    */
-  int GetParkingSpaces(const apollo::common::PointENU& point,
-                       double distance,
-                       std::vector<ParkingSpaceInfoConstPtr>*
-                       parking_spaces) const;
+  int GetParkingSpaces(
+      const apollo::common::PointENU& point, double distance,
+      std::vector<ParkingSpaceInfoConstPtr>* parking_spaces) const;
+  /**
+   * @brief get all pnc junctions in certain range
+   * @param point the central point of the range
+   * @param distance the search radius
+   * @param junctions store all junctions in target range
+   * @return 0:success, otherwise failed
+   */
+  int GetPNCJunctions(
+      const apollo::common::PointENU& point, double distance,
+      std::vector<PNCJunctionInfoConstPtr>* pnc_junctions) const;
   /**
    * @brief get nearest lane from target point,
    * @param point the target point
@@ -222,6 +233,28 @@ class HDMap {
                         std::vector<RoadROIBoundaryPtr>* road_boundaries,
                         std::vector<JunctionBoundaryPtr>* junctions) const;
   /**
+   * @brief get all road boundaries and junctions within certain range
+   * @param point the target position
+   * @param radius the search radius
+   * @param road_boundaries the roads' boundaries
+   * @param junctions the junctions
+   * @return 0:success, otherwise failed
+   */
+  int GetRoadBoundaries(const apollo::common::PointENU& point, double radius,
+                        std::vector<RoadRoiPtr>* road_boundaries,
+                        std::vector<JunctionInfoConstPtr>* junctions) const;
+  /**
+   * @brief get ROI within certain range
+   * @param point the target position
+   * @param radius the search radius
+   * @param roads_roi the roads' boundaries
+   * @param polygons_roi the junctions' boundaries
+   * @return 0:success, otherwise failed
+   */
+  int GetRoi(const apollo::common::PointENU& point, double radius,
+             std::vector<RoadRoiPtr>* roads_roi,
+             std::vector<PolygonRoiPtr>* polygons_roi);
+  /**
    * @brief get forward nearest signals within certain range on the lane
    *        if there are two signals related to one stop line,
    *        return both signals.
@@ -253,11 +286,20 @@ class HDMap {
   int GetStopSignAssociatedLanes(const Id& id,
                                  std::vector<LaneInfoConstPtr>* lanes) const;
 
+  /**
+   * @brief get a local map which is identical to the origin map except that all
+   * map elements without overlap with the given region are deleted.
+   * @param point the target position
+   * @param range the size of local map region, [width, height]
+   * @param local_map local map in proto format
+   * @return 0:success, otherwise failed
+   */
+  int GetLocalMap(const apollo::common::PointENU& point,
+                  const std::pair<double, double>& range, Map* local_map) const;
+
  private:
   HDMapImpl impl_;
 };
 
 }  // namespace hdmap
 }  // namespace apollo
-
-#endif  // MODULES_MAP_HDMAP_HDMAP_H_

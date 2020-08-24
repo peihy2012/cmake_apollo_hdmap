@@ -18,8 +18,7 @@
  * @file
  **/
 
-#ifndef MODULES_COMMON_MATH_PATH_MATCHER_H_
-#define MODULES_COMMON_MATH_PATH_MATCHER_H_
+#pragma once
 
 #include <utility>
 #include <vector>
@@ -52,5 +51,3 @@ class PathMatcher {
 }  // namespace math
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_COMMON_MATH_PATH_MATCHER_H_

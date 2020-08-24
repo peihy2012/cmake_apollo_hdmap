@@ -5,6 +5,7 @@ package apollo.routing;
 import "modules/common/proto/header.proto";
 import "modules/common/proto/geometry.proto";
 import "modules/common/proto/error_code.proto";
+import "modules/map/proto/map_parking_space.proto";
 
 message LaneWaypoint {
   optional string id = 1;
@@ -13,10 +14,15 @@ message LaneWaypoint {
 }
 
 message LaneSegment {
-    optional string id = 1;
-    optional double start_s = 2;
-    optional double end_s = 3;
-  }
+  optional string id = 1;
+  optional double start_s = 2;
+  optional double end_s = 3;
+}
+
+message ParkingInfo {
+  optional string parking_space_id = 1;
+  optional apollo.common.PointENU parking_point = 2;
+}
 
 message RoutingRequest {
   optional apollo.common.Header header = 1;
@@ -26,6 +32,8 @@ message RoutingRequest {
   repeated LaneSegment blacklisted_lane = 3;
   repeated string blacklisted_road = 4;
   optional bool broadcast = 5 [default = true];
+  optional apollo.hdmap.ParkingSpace parking_space = 6 [deprecated = true];
+  optional ParkingInfo parking_info = 7;
 }
 
 message Measurement {
@@ -33,16 +41,15 @@ message Measurement {
 }
 
 enum ChangeLaneType {
-    FORWARD = 0;
-    LEFT = 1;
-    RIGHT = 2;
+  FORWARD = 0;
+  LEFT = 1;
+  RIGHT = 2;
 };
 
-
 message Passage {
-   repeated LaneSegment segment = 1;
-   optional bool can_exit = 2;
-   optional ChangeLaneType change_lane_type = 3 [default = FORWARD];
+  repeated LaneSegment segment = 1;
+  optional bool can_exit = 2;
+  optional ChangeLaneType change_lane_type = 3 [default = FORWARD];
 }
 
 message RoadSegment {

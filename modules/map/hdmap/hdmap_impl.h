@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 =========================================================================*/
 
-#ifndef MODULES_MAP_HDMAP_HDMAP_IMPL_H_
-#define MODULES_MAP_HDMAP_HDMAP_IMPL_H_
+#pragma once
 
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "modules/common/math/aabox2d.h"
@@ -34,11 +34,12 @@ limitations under the License.
 #include "modules/map/proto/map_junction.pb.h"
 #include "modules/map/proto/map_lane.pb.h"
 #include "modules/map/proto/map_overlap.pb.h"
+#include "modules/map/proto/map_parking_space.pb.h"
+#include "modules/map/proto/map_pnc_junction.pb.h"
 #include "modules/map/proto/map_signal.pb.h"
 #include "modules/map/proto/map_speed_bump.pb.h"
 #include "modules/map/proto/map_stop_sign.pb.h"
 #include "modules/map/proto/map_yield_sign.pb.h"
-#include "modules/map/proto/map_parking_space.pb.h"
 
 /**
  * @namespace apollo::hdmap
@@ -71,10 +72,11 @@ class HDMapImpl {
       std::unordered_map<std::string, std::shared_ptr<SpeedBumpInfo>>;
   using OverlapTable =
       std::unordered_map<std::string, std::shared_ptr<OverlapInfo>>;
-  using RoadTable =
-      std::unordered_map<std::string, std::shared_ptr<RoadInfo>>;
+  using RoadTable = std::unordered_map<std::string, std::shared_ptr<RoadInfo>>;
   using ParkingSpaceTable =
       std::unordered_map<std::string, std::shared_ptr<ParkingSpaceInfo>>;
+  using PNCJunctionTable =
+      std::unordered_map<std::string, std::shared_ptr<PNCJunctionInfo>>;
 
  public:
   /**
@@ -102,6 +104,7 @@ class HDMapImpl {
   OverlapInfoConstPtr GetOverlapById(const Id& id) const;
   RoadInfoConstPtr GetRoadById(const Id& id) const;
   ParkingSpaceInfoConstPtr GetParkingSpaceById(const Id& id) const;
+  PNCJunctionInfoConstPtr GetPNCJunctionById(const Id& id) const;
 
   /**
    * @brief get all lanes in certain range
@@ -192,9 +195,20 @@ class HDMapImpl {
    * @param parking_spaces store all parking spaces in target range
    * @return 0:success, otherwise failed
    */
-  int GetParkingSpaces(const apollo::common::PointENU& point, double distance,
-                      std::vector<ParkingSpaceInfoConstPtr>*
-                      parking_spaces) const;
+  int GetParkingSpaces(
+      const apollo::common::PointENU& point, double distance,
+      std::vector<ParkingSpaceInfoConstPtr>* parking_spaces) const;
+
+  /**
+   * @brief get all pnc junctions in certain range
+   * @param point the central point of the range
+   * @param distance the search radius
+   * @param junctions store all junctions in target range
+   * @return 0:success, otherwise failed
+   */
+  int GetPNCJunctions(
+      const apollo::common::PointENU& point, double distance,
+      std::vector<PNCJunctionInfoConstPtr>* pnc_junctions) const;
 
   /**
    * @brief get nearest lane from target point,
@@ -249,6 +263,28 @@ class HDMapImpl {
                         std::vector<RoadROIBoundaryPtr>* road_boundaries,
                         std::vector<JunctionBoundaryPtr>* junctions) const;
   /**
+   * @brief get all road boundaries and junctions within certain range
+   * @param point the target position
+   * @param radius the search radius
+   * @param road_boundaries the roads' boundaries
+   * @param junctions the junctions
+   * @return 0:success, otherwise failed
+   */
+  int GetRoadBoundaries(const apollo::common::PointENU& point, double radius,
+                        std::vector<RoadRoiPtr>* road_boundaries,
+                        std::vector<JunctionInfoConstPtr>* junctions) const;
+  /**
+   * @brief get ROI within certain range
+   * @param point the target position
+   * @param radius the search radius
+   * @param roads_roi the roads' boundaries
+   * @param polygons_roi the junctions' boundaries
+   * @return 0:success, otherwise failed
+   */
+  int GetRoi(const apollo::common::PointENU& point, double radius,
+             std::vector<RoadRoiPtr>* roads_roi,
+             std::vector<PolygonRoiPtr>* polygons_roi);
+  /**
    * @brief get forward nearest signals within certain range on the lane
    *        if there are two signals related to one stop line,
    *        return both signals.
@@ -280,6 +316,17 @@ class HDMapImpl {
   int GetStopSignAssociatedLanes(const Id& id,
                                  std::vector<LaneInfoConstPtr>* lanes) const;
 
+  /**
+   * @brief get a local map which is identical to the origin map except that all
+   * map elements without overlap with the given region are deleted.
+   * @param point the target position
+   * @param range the size of local map region, [width, height]
+   * @param local_map local map in proto format
+   * @return 0:success, otherwise failed
+   */
+  int GetLocalMap(const apollo::common::PointENU& point,
+                  const std::pair<double, double>& range, Map* local_map) const;
+
  private:
   int GetLanes(const apollo::common::math::Vec2d& point, double distance,
                std::vector<LaneInfoConstPtr>* lanes) const;
@@ -297,10 +344,12 @@ class HDMapImpl {
                     std::vector<ClearAreaInfoConstPtr>* clear_areas) const;
   int GetSpeedBumps(const apollo::common::math::Vec2d& point, double distance,
                     std::vector<SpeedBumpInfoConstPtr>* speed_bumps) const;
-  int GetParkingSpaces(const apollo::common::math::Vec2d& point,
-                       double distance,
-                       std::vector<ParkingSpaceInfoConstPtr>*
-                       parking_spaces) const;
+  int GetParkingSpaces(
+      const apollo::common::math::Vec2d& point, double distance,
+      std::vector<ParkingSpaceInfoConstPtr>* parking_spaces) const;
+  int GetPNCJunctions(
+      const apollo::common::math::Vec2d& point, double distance,
+      std::vector<PNCJunctionInfoConstPtr>* pnc_junctions) const;
   int GetNearestLane(const apollo::common::math::Vec2d& point,
                      LaneInfoConstPtr* nearest_lane, double* nearest_s,
                      double* nearest_l) const;
@@ -336,6 +385,7 @@ class HDMapImpl {
   void BuildClearAreaPolygonKDTree();
   void BuildSpeedBumpSegmentKDTree();
   void BuildParkingSpacePolygonKDTree();
+  void BuildPNCJunctionPolygonKDTree();
 
   template <class KDTree>
   static int SearchObjects(const apollo::common::math::Vec2d& center,
@@ -357,6 +407,7 @@ class HDMapImpl {
   OverlapTable overlap_table_;
   RoadTable road_table_;
   ParkingSpaceTable parking_space_table_;
+  PNCJunctionTable pnc_junction_table_;
 
   std::vector<LaneSegmentBox> lane_segment_boxes_;
   std::unique_ptr<LaneSegmentKDTree> lane_segment_kdtree_;
@@ -384,9 +435,10 @@ class HDMapImpl {
 
   std::vector<ParkingSpacePolygonBox> parking_space_polygon_boxes_;
   std::unique_ptr<ParkingSpacePolygonKDTree> parking_space_polygon_kdtree_;
+
+  std::vector<PNCJunctionPolygonBox> pnc_junction_polygon_boxes_;
+  std::unique_ptr<PNCJunctionPolygonKDTree> pnc_junction_polygon_kdtree_;
 };
 
 }  // namespace hdmap
 }  // namespace apollo
-
-#endif  // MODULES_MAP_HDMAP_HDMAP_IMPL_H_

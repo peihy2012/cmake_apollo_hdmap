@@ -1,19 +1,20 @@
 syntax = "proto2";
 
-// Defined Point types that are commonly used in PnC (Planning and Control) modules.
+// Defined Point types that are commonly used in PnC (Planning and Control)
+// modules.
 
 package apollo.common;
 
 message SLPoint {
-    optional double s = 1;
-    optional double l = 2;
+  optional double s = 1;
+  optional double l = 2;
 }
 
 message FrenetFramePoint {
-    optional double s = 1;
-    optional double l = 2;
-    optional double dl = 3;
-    optional double ddl = 4;
+  optional double s = 1;
+  optional double l = 2;
+  optional double dl = 3;
+  optional double ddl = 4;
 }
 
 message SpeedPoint {
@@ -60,11 +61,46 @@ message Path {
 message TrajectoryPoint {
   // path point
   optional PathPoint path_point = 1;
-
   // linear velocity
   optional double v = 2;  // in [m/s]
   // linear acceleration
   optional double a = 3;
   // relative time from beginning of the trajectory
   optional double relative_time = 4;
+  // longitudinal jerk
+  optional double da = 5;
+  // The angle between vehicle front wheel and vehicle longitudinal axis
+  optional double steer = 6;
+
+  // Gaussian probability information
+  optional GaussianInfo gaussian_info = 7;
+}
+
+message Trajectory {
+  optional string name = 1;
+  repeated TrajectoryPoint trajectory_point = 2;
+}
+
+message VehicleMotionPoint {
+  // trajectory point
+  optional TrajectoryPoint trajectory_point = 1;
+  // The angle between vehicle front wheel and vehicle longitudinal axis
+  optional double steer = 2;
+}
+
+message VehicleMotion {
+  optional string name = 1;
+  repeated VehicleMotionPoint vehicle_motion_point = 2;
+}
+
+message GaussianInfo {
+  // Information of gaussian distribution
+  optional double sigma_x = 1;
+  optional double sigma_y = 2;
+  optional double correlation = 3;
+  // Information of representative uncertainty area
+  optional double area_probability = 4;
+  optional double ellipse_a = 5;
+  optional double ellipse_b = 6;
+  optional double theta_a = 7;
 }

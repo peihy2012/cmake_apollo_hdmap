@@ -19,15 +19,16 @@
  * @brief Defines some useful matrix operations.
  */
 
-#ifndef MODULES_COMMON_MATH_MATRIX_OPERATIONS_H_
-#define MODULES_COMMON_MATH_MATRIX_OPERATIONS_H_
+#pragma once
 
 #include <cmath>
 #include <utility>
+#include <vector>
+
 #include "Eigen/Dense"
 #include "Eigen/SVD"
 
-#include "modules/common/log.h"
+#include "cyber/common/log.h"
 
 /**
  * @namespace apollo::common::math
@@ -51,12 +52,13 @@ Eigen::Matrix<T, N, N> PseudoInverse(const Eigen::Matrix<T, N, N> &m,
                                      const double epsilon = 1.0e-6) {
   Eigen::JacobiSVD<Eigen::Matrix<T, N, N>> svd(
       m, Eigen::ComputeFullU | Eigen::ComputeFullV);
-  return svd.matrixV() *
-         (svd.singularValues().array().abs() > epsilon)
-             .select(svd.singularValues().array().inverse(), 0)
-             .matrix()
-             .asDiagonal() *
-         svd.matrixU().adjoint();
+  return static_cast<Eigen::Matrix<T, N, N>>(
+      svd.matrixV() *
+      (svd.singularValues().array().abs() > epsilon)
+          .select(svd.singularValues().array().inverse(), 0)
+          .matrix()
+          .asDiagonal() *
+      svd.matrixU().adjoint());
 }
 
 /**
@@ -72,7 +74,8 @@ template <typename T, unsigned int M, unsigned int N>
 Eigen::Matrix<T, N, M> PseudoInverse(const Eigen::Matrix<T, M, N> &m,
                                      const double epsilon = 1.0e-6) {
   Eigen::Matrix<T, M, M> t = m * m.transpose();
-  return m.transpose() * PseudoInverse<T, M>(t);
+  return static_cast<Eigen::Matrix<T, N, M>>(m.transpose() *
+                                             PseudoInverse<T, M>(t));
 }
 
 /**
@@ -135,8 +138,26 @@ bool ContinuousToDiscrete(const Eigen::MatrixXd &m_a,
                           Eigen::MatrixXd *ptr_a_d, Eigen::MatrixXd *ptr_b_d,
                           Eigen::MatrixXd *ptr_c_d, Eigen::MatrixXd *ptr_d_d);
 
+template <typename T, int M, int N, typename D>
+void DenseToCSCMatrix(const Eigen::Matrix<T, M, N> &dense_matrix,
+                      std::vector<T> *data, std::vector<D> *indices,
+                      std::vector<D> *indptr) {
+  static constexpr double epsilon = 1e-9;
+  int data_count = 0;
+  for (int c = 0; c < dense_matrix.cols(); ++c) {
+    indptr->emplace_back(data_count);
+    for (int r = 0; r < dense_matrix.rows(); ++r) {
+      if (std::fabs(dense_matrix(r, c)) < epsilon) {
+        continue;
+      }
+      data->emplace_back(dense_matrix(r, c));
+      ++data_count;
+      indices->emplace_back(r);
+    }
+  }
+  indptr->emplace_back(data_count);
+}
+
 }  // namespace math
 }  // namespace common
 }  // namespace apollo
-
-#endif /* MODULES_COMMON_MATH_MATRIX_OPERATIONS_H_ */

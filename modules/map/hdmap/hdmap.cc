@@ -75,6 +75,10 @@ ParkingSpaceInfoConstPtr HDMap::GetParkingSpaceById(const Id& id) const {
   return impl_.GetParkingSpaceById(id);
 }
 
+PNCJunctionInfoConstPtr HDMap::GetPNCJunctionById(const Id& id) const {
+  return impl_.GetPNCJunctionById(id);
+}
+
 int HDMap::GetLanes(const apollo::common::PointENU& point, double distance,
                     std::vector<LaneInfoConstPtr>* lanes) const {
   return impl_.GetLanes(point, distance, lanes);
@@ -129,6 +133,12 @@ int HDMap::GetParkingSpaces(
   return impl_.GetParkingSpaces(point, distance, parking_spaces);
 }
 
+int HDMap::GetPNCJunctions(
+    const apollo::common::PointENU& point, double distance,
+    std::vector<PNCJunctionInfoConstPtr>* pnc_junctions) const {
+  return impl_.GetPNCJunctions(point, distance, pnc_junctions);
+}
+
 int HDMap::GetNearestLane(const common::PointENU& point,
                           LaneInfoConstPtr* nearest_lane, double* nearest_s,
                           double* nearest_l) const {
@@ -163,6 +173,19 @@ int HDMap::GetRoadBoundaries(
   return impl_.GetRoadBoundaries(point, radius, road_boundaries, junctions);
 }
 
+int HDMap::GetRoadBoundaries(
+    const apollo::common::PointENU& point, double radius,
+    std::vector<RoadRoiPtr>* road_boundaries,
+    std::vector<JunctionInfoConstPtr>* junctions) const {
+  return impl_.GetRoadBoundaries(point, radius, road_boundaries, junctions);
+}
+
+int HDMap::GetRoi(const apollo::common::PointENU& point, double radius,
+                  std::vector<RoadRoiPtr>* roads_roi,
+                  std::vector<PolygonRoiPtr>* polygons_roi) {
+  return impl_.GetRoi(point, radius, roads_roi, polygons_roi);
+}
+
 int HDMap::GetForwardNearestSignalsOnLane(
     const apollo::common::PointENU& point, const double distance,
     std::vector<SignalInfoConstPtr>* signals) const {
@@ -177,6 +200,12 @@ int HDMap::GetStopSignAssociatedStopSigns(
 int HDMap::GetStopSignAssociatedLanes(
     const Id& id, std::vector<LaneInfoConstPtr>* lanes) const {
   return impl_.GetStopSignAssociatedLanes(id, lanes);
+}
+
+int HDMap::GetLocalMap(const apollo::common::PointENU& point,
+                       const std::pair<double, double>& range,
+                       Map* local_map) const {
+  return impl_.GetLocalMap(point, range, local_map);
 }
 
 }  // namespace hdmap

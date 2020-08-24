@@ -5,9 +5,7 @@ package apollo.common;
 import "modules/common/proto/error_code.proto";
 
 message Header {
-  // Message publishing time in seconds. It is recommended to obtain
-  // timestamp_sec from ros::Time::now(), right before calling
-  // SerializeToString() and publish().
+  // Message publishing time in seconds.
   optional double timestamp_sec = 1;
 
   // Module name.
@@ -30,4 +28,6 @@ message Header {
   optional uint32 version = 7 [default = 1];
 
   optional StatusPb status = 8;
+
+  optional string frame_id = 9;
 }

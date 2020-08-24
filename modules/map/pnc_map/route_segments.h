@@ -18,14 +18,10 @@
  * @file
  **/
 
-#ifndef MODULES_MAP_PNC_MAP_ROUTE_SEGMENTS_H_
-#define MODULES_MAP_PNC_MAP_ROUTE_SEGMENTS_H_
+#pragma once
 
 #include <limits>
-#include <memory>
 #include <string>
-#include <unordered_set>
-#include <utility>
 #include <vector>
 
 #include "gflags/gflags.h"
@@ -45,11 +41,11 @@ namespace hdmap {
  *
  * This class is a representation of the Passage type in routing.proto.
  * It is extended from a passage region, but keeps some properties of the
- *passage
- * such as the last end LaneWaypoint of the original passage region
+ * passage, such as the last end LaneWaypoint of the original passage region
  * (route_end_waypoint), whether the passage can lead to another passage in
- * routing (can_exit_). This class contains the original data that can be used
- * to generate hdmap::Path
+ * routing (can_exit_).
+ * This class contains the original data that can be used to generate
+ * hdmap::Path.
  **/
 class RouteSegments : public std::vector<LaneSegment> {
  public:
@@ -61,12 +57,12 @@ class RouteSegments : public std::vector<LaneSegment> {
   /**
    * Get the next change lane action need to take by the vehicle, if the vehicle
    * is on this RouteSegments.
-   * If the vehicle does not need to change lane, then change_lane_type =*
-   * routing::FORWARD;
-   * If the vehicle need to change to left lane according to routing, then
-   * change_lane_type_ =  routing::LEFT;
-   * If the vehicle need to change to right lane according to routing, then
-   * change_lane_type_ = routing::RIGHT;
+   * --- If the vehicle does not need to change lane, then change_lane_type ==
+   *     routing::FORWARD;
+   * --- If the vehicle need to change to left lane according to routing, then
+   *     change_lane_type_ == routing::LEFT;
+   * --- If the vehicle need to change to right lane according to routing, then
+   *     change_lane_type_ == routing::RIGHT;
    */
   routing::ChangeLaneType NextAction() const;
   void SetNextAction(routing::ChangeLaneType action);
@@ -74,7 +70,6 @@ class RouteSegments : public std::vector<LaneSegment> {
   /**
    * Get the previous change lane action need to take by the vehicle to reach
    * current segment, if the vehicle is not on this RouteSegments.
-   * this RouteSegment,
    * If the vehicle is already on this segment, or does not need to change lane
    * to reach this segment, then change_lane_type = routing::FORWARD;
    * If the vehicle need to change to left to reach this segment, then
@@ -105,14 +100,15 @@ class RouteSegments : public std::vector<LaneSegment> {
                      common::SLPoint *sl_point, LaneWaypoint *waypoint) const;
   bool GetProjection(const common::math::Vec2d &point,
                      common::SLPoint *sl_point, LaneWaypoint *waypoint) const;
+
+  bool GetWaypoint(const double s, LaneWaypoint *waypoint) const;
+
   /**
-   * Check whether the map allows a vehicle can reach current RouteSegment
-   * from
-   * a point on a lane (LaneWaypoint).
+   * @brief Check whether the map allows a vehicle can reach current
+   * RouteSegment from a point on a lane (LaneWaypoint).
    * @param waypoint the start waypoint
    * @return true if the map allows a vehicle to drive from waypoint to
-   * current
-   * RouteSegment. Otherwise false.
+   * current RouteSegment. Otherwise false.
    */
   bool CanDriveFrom(const LaneWaypoint &waypoint) const;
 
@@ -146,6 +142,12 @@ class RouteSegments : public std::vector<LaneSegment> {
 
   bool Shrink(const common::math::Vec2d &point, const double look_backward,
               const double look_forward);
+
+  bool Shrink(const double s, const double look_backward,
+              const double look_forward);
+
+  bool Shrink(const double s, const LaneWaypoint &waypoint,
+              const double look_backward, const double look_forward);
 
   bool IsOnSegment() const;
   void SetIsOnSegment(bool on_segment);
@@ -182,7 +184,7 @@ class RouteSegments : public std::vector<LaneSegment> {
   void SetStopForDestination(bool stop_for_destination);
 
   /**
-   * Copy the properties of other segments to current one
+   * @brief Copy the properties of other segments to current one
    */
   void SetProperties(const RouteSegments &other);
 
@@ -235,5 +237,3 @@ class RouteSegments : public std::vector<LaneSegment> {
 
 }  // namespace hdmap
 }  // namespace apollo
-
-#endif  // MODULES_MAP_PNC_MAP_ROUTE_SEGMENTS_H_

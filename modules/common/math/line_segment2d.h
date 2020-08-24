@@ -19,10 +19,10 @@
  * @brief Define the LineSegment2d class.
  */
 
-#ifndef MODULES_COMMON_MATH_LINE_SEGEMENT2D_H_
-#define MODULES_COMMON_MATH_LINE_SEGEMENT2D_H_
+#pragma once
 
 #include <string>
+
 #include "modules/common/math/vec2d.h"
 
 /**
@@ -74,6 +74,12 @@ class LineSegment2d {
    * @return The center of the line segment.
    */
   Vec2d center() const { return (start_ + end_) / 2.0; }
+
+  /** @brief Get a new line-segment with the same start point, but rotated
+   * counterclock-wise by the given amount.
+   * @return The rotated line-segment's end-point.
+   */
+  Vec2d rotate(const double angle);
 
   /**
    * @brief Get the heading of the line segment.
@@ -206,7 +212,7 @@ class LineSegment2d {
    * @brief Get the debug string including the essential information.
    * @return Information of the line segment for debugging.
    */
-  // std::string DebugString() const;
+  std::string DebugString() const;
 
  private:
   Vec2d start_;
@@ -219,5 +225,3 @@ class LineSegment2d {
 }  // namespace math
 }  // namespace common
 }  // namespace apollo
-
-#endif /* MODULES_COMMON_MATH_LINE_SEGEMENT2D_H_ */

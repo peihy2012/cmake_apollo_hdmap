@@ -18,7 +18,7 @@
 
 #include <limits>
 
-#include "modules/common/log.h"
+#include "cyber/common/log.h"
 
 namespace apollo {
 namespace common {
@@ -36,7 +36,7 @@ MF::MeanFilter(const uint8 window_size) : window_size_(window_size) {
 }
 
 double MF::GetMin() const {
-  if (min_candidates_.size() == 0) {
+  if (min_candidates_.empty()) {
     return std::numeric_limits<double>::infinity();
   } else {
     return min_candidates_.front().second;
@@ -44,7 +44,7 @@ double MF::GetMin() const {
 }
 
 double MF::GetMax() const {
-  if (max_candidates_.size() == 0) {
+  if (max_candidates_.empty()) {
     return -std::numeric_limits<double>::infinity();
   } else {
     return max_candidates_.front().second;
@@ -52,20 +52,21 @@ double MF::GetMax() const {
 }
 
 double MF::Update(const double measurement) {
-  CHECK(initialized_);
+  ACHECK(initialized_);
   CHECK_LE(values_.size(), window_size_);
   CHECK_LE(min_candidates_.size(), window_size_);
   CHECK_LE(max_candidates_.size(), window_size_);
   ++time_;
-  time_ %= 2 * window_size_;
+  time_ %= static_cast<std::uint_fast8_t>(2 * window_size_);
   if (values_.size() == window_size_) {
     RemoveEarliest();
   }
   Insert(measurement);
   if (values_.size() > 2) {
-    return (sum_ - GetMin() - GetMax()) / (values_.size() - 2);
+    return (sum_ - GetMin() - GetMax()) /
+           static_cast<double>(values_.size() - 2);
   } else {
-    return sum_ / values_.size();
+    return sum_ / static_cast<double>(values_.size());
   }
 }
 

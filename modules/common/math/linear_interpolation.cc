@@ -18,7 +18,7 @@
 
 #include <cmath>
 
-#include "modules/common/log.h"
+#include "cyber/common/log.h"
 #include "modules/common/math/math_utils.h"
 
 namespace apollo {
@@ -28,7 +28,7 @@ namespace math {
 double slerp(const double a0, const double t0, const double a1, const double t1,
              const double t) {
   if (std::abs(t1 - t0) <= kMathEpsilon) {
-    AERROR << "input time difference is too small";
+    ADEBUG << "input time difference is too small";
     return NormalizeAngle(a0);
   }
   const double a0_n = NormalizeAngle(a0);
@@ -60,7 +60,6 @@ PathPoint InterpolateUsingLinearApproximation(const PathPoint &p0,
                                               const double s) {
   double s0 = p0.s();
   double s1 = p1.s();
-  CHECK_LE(s0, s1);
 
   PathPoint path_point;
   double weight = (s - s0) / (s1 - s0);
@@ -97,6 +96,7 @@ TrajectoryPoint InterpolateUsingLinearApproximation(const TrajectoryPoint &tp0,
   tp.set_v(lerp(tp0.v(), t0, tp1.v(), t1, t));
   tp.set_a(lerp(tp0.a(), t0, tp1.a(), t1, t));
   tp.set_relative_time(t);
+  tp.set_steer(slerp(tp0.steer(), t0, tp1.steer(), t1, t));
 
   PathPoint *path_point = tp.mutable_path_point();
   path_point->set_x(lerp(pp0.x(), t0, pp1.x(), t1, t));

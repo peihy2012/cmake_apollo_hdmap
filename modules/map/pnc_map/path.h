@@ -14,20 +14,15 @@
  * limitations under the License.
  *****************************************************************************/
 
-#ifndef MODULES_MAP_PNC_MAP_PATH_H_
-#define MODULES_MAP_PNC_MAP_PATH_H_
+#pragma once
 
-#include <cmath>
-#include <functional>
-#include <memory>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "modules/map/proto/map_lane.pb.h"
 
-#include "modules/common/log.h"
+#include "cyber/common/log.h"
 #include "modules/common/math/box2d.h"
 #include "modules/common/math/line_segment2d.h"
 #include "modules/common/math/vec2d.h"
@@ -51,7 +46,7 @@ struct LaneWaypoint {
   double s = 0.0;
   double l = 0.0;
 
-  // std::string DebugString() const;
+  std::string DebugString() const;
 };
 
 /**
@@ -90,7 +85,7 @@ struct LaneSegment {
    */
   static void Join(std::vector<LaneSegment>* segments);
 
-  // std::string DebugString() const;
+  std::string DebugString() const;
 };
 
 struct PathOverlap {
@@ -102,7 +97,7 @@ struct PathOverlap {
   double start_s = 0.0;
   double end_s = 0.0;
 
-  // std::string DebugString() const;
+  std::string DebugString() const;
 };
 
 class MapPathPoint : public common::math::Vec2d {
@@ -138,7 +133,16 @@ class MapPathPoint : public common::math::Vec2d {
 
   void clear_lane_waypoints() { lane_waypoints_.clear(); }
 
-  // std::string DebugString() const;
+  static void RemoveDuplicates(std::vector<MapPathPoint>* points);
+
+  static std::vector<MapPathPoint> GetPointsFromSegment(
+      const LaneSegment& segment);
+
+  static std::vector<MapPathPoint> GetPointsFromLane(LaneInfoConstPtr lane,
+                                                     const double start_s,
+                                                     const double end_s);
+
+  std::string DebugString() const;
 
  protected:
   double heading_ = 0.0;
@@ -184,7 +188,7 @@ class PathApproximation {
   std::vector<common::math::LineSegment2d> segments_;
   std::vector<double> max_error_per_segment_;
 
-  // TODO(@lianglia_apollo): use direction change checks to early stop.
+  // TODO(All): use direction change checks to early stop.
 
   // Projection of points onto the diluated segments.
   std::vector<double> projections_;
@@ -213,6 +217,8 @@ class Path {
   Path() = default;
   explicit Path(const std::vector<MapPathPoint>& path_points);
   explicit Path(std::vector<MapPathPoint>&& path_points);
+  explicit Path(std::vector<LaneSegment>&& path_points);
+  explicit Path(const std::vector<LaneSegment>& path_points);
 
   Path(const std::vector<MapPathPoint>& path_points,
        const std::vector<LaneSegment>& lane_segments);
@@ -294,17 +300,20 @@ class Path {
   const std::vector<PathOverlap>& crosswalk_overlaps() const {
     return crosswalk_overlaps_;
   }
-  const std::vector<PathOverlap>& parking_space_overlaps() const {
-    return parking_space_overlaps_;
-  }
   const std::vector<PathOverlap>& junction_overlaps() const {
     return junction_overlaps_;
+  }
+  const std::vector<PathOverlap>& pnc_junction_overlaps() const {
+    return pnc_junction_overlaps_;
   }
   const std::vector<PathOverlap>& clear_area_overlaps() const {
     return clear_area_overlaps_;
   }
   const std::vector<PathOverlap>& speed_bump_overlaps() const {
     return speed_bump_overlaps_;
+  }
+  const std::vector<PathOverlap>& parking_space_overlaps() const {
+    return parking_space_overlaps_;
   }
 
   double GetLaneLeftWidth(const double s) const;
@@ -320,7 +329,7 @@ class Path {
   bool IsOnPath(const common::math::Vec2d& point) const;
   bool OverlapWith(const common::math::Box2d& box, double width) const;
 
-  // std::string DebugString() const;
+  std::string DebugString() const;
 
  protected:
   void Init();
@@ -366,11 +375,10 @@ class Path {
   std::vector<PathOverlap> crosswalk_overlaps_;
   std::vector<PathOverlap> parking_space_overlaps_;
   std::vector<PathOverlap> junction_overlaps_;
+  std::vector<PathOverlap> pnc_junction_overlaps_;
   std::vector<PathOverlap> clear_area_overlaps_;
   std::vector<PathOverlap> speed_bump_overlaps_;
 };
 
 }  // namespace hdmap
 }  // namespace apollo
-
-#endif  // MODULES_MAP_PNC_MAP_PATH_H_

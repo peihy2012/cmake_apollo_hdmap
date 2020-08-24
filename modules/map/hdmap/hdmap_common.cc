@@ -16,10 +16,9 @@ limitations under the License.
 #include "modules/map/hdmap/hdmap_common.h"
 
 #include <algorithm>
-#include <iostream>
 #include <limits>
 
-#include "modules/common/log.h"
+#include "cyber/common/log.h"
 #include "modules/common/math/linear_interpolation.h"
 #include "modules/common/math/math_utils.h"
 #include "modules/map/hdmap/hdmap_impl.h"
@@ -35,19 +34,19 @@ using apollo::common::math::Vec2d;
 // const double kSegmentationEpsilon = 0.2;
 
 // Minimum distance to remove duplicated points.
-const double kDuplicatedPointsEpsilon = 1e-7;
+constexpr double kDuplicatedPointsEpsilon = 1e-7;
 
 // Margin for comparation
-const double kEpsilon = 0.1;
+constexpr double kEpsilon = 0.1;
 
 // Maximum x-coordinate of utm
 // const double kMaxXCoordinate = 834000;
 // Minimum x-coordinate of utm
-const double kMinXCoordinate = 166000;
+// const double kMinXCoordinate = 166000;
 // Maximum y-coordinate of utm
-const double kMaxYCoordinate = 10000000;
+// const double kMaxYCoordinate = 10000000;
 // Minimum y-coordinate of utm
-const double kMinYCoordinate = 0;
+// const double kMinYCoordinate = 0;
 
 bool IsPointValid(const PointENU &point) {
   /* if (point.x() > kMaxXCoordinate || point.x() < kMinXCoordinate) {
@@ -81,7 +80,7 @@ void PointsFromCurve(const Curve &input_curve, std::vector<Vec2d> *points) {
   for (const auto &curve : input_curve.segment()) {
     if (curve.has_line_segment()) {
       for (const auto &point : curve.line_segment().point()) {
-        CHECK(IsPointValid(point))
+        ACHECK(IsPointValid(point))
             << "invalid map point: " << point.DebugString();
         points->emplace_back(point.x(), point.y());
       }
@@ -96,7 +95,7 @@ apollo::common::math::Polygon2d ConvertToPolygon2d(const Polygon &polygon) {
   std::vector<Vec2d> points;
   points.reserve(polygon.point_size());
   for (const auto &point : polygon.point()) {
-    CHECK(IsPointValid(point)) << "invalid map point:" << point.DebugString();
+    ACHECK(IsPointValid(point)) << "invalid map point:" << point.DebugString();
     points.emplace_back(point.x(), point.y());
   }
   RemoveDuplicates(&points);
@@ -148,7 +147,7 @@ void LaneInfo::Init() {
 
   accumulated_s_.push_back(s);
   total_length_ = s;
-  CHECK(!unit_directions_.empty());
+  ACHECK(!unit_directions_.empty());
   unit_directions_.push_back(unit_directions_.back());
   for (const auto &direction : unit_directions_) {
     headings_.push_back(direction.Angle());
@@ -156,7 +155,7 @@ void LaneInfo::Init() {
   for (const auto &overlap_id : lane_.overlap_id()) {
     overlap_ids_.emplace_back(overlap_id.id());
   }
-  CHECK(!segments_.empty());
+  ACHECK(!segments_.empty());
 
   sampled_left_width_.clear();
   sampled_right_width_.clear();
@@ -188,10 +187,10 @@ void LaneInfo::Init() {
         }
       }
     } else if (lane_.type() == Lane::NONE) {
-      AERROR << "lane_[id = " << lane_.id().DebugString() << " type is NONE.";
+      AERROR << "lane_[id = " << lane_.id().DebugString() << "] type is NONE.";
     }
   } else {
-    AERROR << "lane_[id = " << lane_.id().DebugString() << "has NO type.";
+    AERROR << "lane_[id = " << lane_.id().DebugString() << "] has NO type.";
   }
 
   sampled_left_road_width_.clear();
@@ -228,13 +227,12 @@ double LaneInfo::Heading(const double s) const {
   }
 
   auto iter = std::lower_bound(accumulated_s_.begin(), accumulated_s_.end(), s);
-  int index = std::distance(accumulated_s_.begin(), iter);
+  int index = static_cast<int>(std::distance(accumulated_s_.begin(), iter));
   if (index == 0 || *iter - s <= common::math::kMathEpsilon) {
     return headings_[index];
-  } else {
-    return common::math::slerp(headings_[index - 1], accumulated_s_[index - 1],
-                               headings_[index], accumulated_s_[index], s);
   }
+  return common::math::slerp(headings_[index - 1], accumulated_s_[index - 1],
+                             headings_[index], accumulated_s_[index], s);
 }
 
 double LaneInfo::Curvature(const double s) const {
@@ -257,14 +255,13 @@ double LaneInfo::Curvature(const double s) const {
     ADEBUG << "Reach the end of lane.";
     return 0.0;
   }
-  int index = std::distance(accumulated_s_.begin(), iter);
+  int index = static_cast<int>(std::distance(accumulated_s_.begin(), iter));
   if (index == 0) {
     ADEBUG << "Reach the beginning of lane";
     return 0.0;
-  } else {
-    return (headings_[index] - headings_[index - 1]) /
-           (accumulated_s_[index] - accumulated_s_[index - 1] + kEpsilon);
   }
+  return (headings_[index] - headings_[index - 1]) /
+         (accumulated_s_[index] - accumulated_s_[index - 1] + kEpsilon);
 }
 
 double LaneInfo::GetWidth(const double s) const {
@@ -426,7 +423,7 @@ bool LaneInfo::GetProjection(const Vec2d &point, double *accumulate_s,
     return false;
   }
   double min_dist = std::numeric_limits<double>::infinity();
-  int seg_num = segments_.size();
+  int seg_num = static_cast<int>(segments_.size());
   int min_index = 0;
   for (int i = 0; i < seg_num; ++i) {
     const double distance = segments_[i].DistanceSquareTo(point);
@@ -503,12 +500,12 @@ void LaneInfo::UpdateOverlaps(const HDMapImpl &map_instance) {
       if (map_instance.GetSpeedBumpById(object_map_id) != nullptr) {
         speed_bumps_.emplace_back(overlap_ptr);
       }
-      // TODO(all): support parking
-      /*
-      if (map_instance.get_parking_space_by_id(object_map_id) != nullptr) {
+      if (map_instance.GetParkingSpaceById(object_map_id) != nullptr) {
         parking_spaces_.emplace_back(overlap_ptr);
       }
-      */
+      if (map_instance.GetPNCJunctionById(object_map_id) != nullptr) {
+        pnc_junctions_.emplace_back(overlap_ptr);
+      }
     }
   }
 }
@@ -571,7 +568,7 @@ void SignalInfo::Init() {
   for (const auto &stop_line : signal_.stop_line()) {
     SegmentsFromCurve(stop_line, &segments_);
   }
-  CHECK(!segments_.empty());
+  ACHECK(!segments_.empty());
   std::vector<Vec2d> points;
   for (const auto &segment : segments_) {
     points.emplace_back(segment.start());
@@ -598,7 +595,7 @@ void StopSignInfo::init() {
   for (const auto &stop_line : stop_sign_.stop_line()) {
     SegmentsFromCurve(stop_line, &segments_);
   }
-  CHECK(!segments_.empty());
+  ACHECK(!segments_.empty());
 
   for (const auto &overlap_id : stop_sign_.overlap_id()) {
     overlap_ids_.emplace_back(overlap_id);
@@ -629,7 +626,7 @@ void StopSignInfo::UpdateOverlaps(const HDMapImpl &map_instance) {
       }
     }
   }
-  if (overlap_junction_ids_.size() <= 0) {
+  if (overlap_junction_ids_.empty()) {
     AWARN << "stop sign " << id().id() << "has no overlap with any junction.";
   }
 }
@@ -644,7 +641,7 @@ void YieldSignInfo::Init() {
     SegmentsFromCurve(stop_line, &segments_);
   }
   // segments_from_curve(yield_sign_.stop_line(), &segments_);
-  CHECK(!segments_.empty());
+  ACHECK(!segments_.empty());
 }
 
 ClearAreaInfo::ClearAreaInfo(const ClearArea &clear_area)
@@ -666,7 +663,7 @@ void SpeedBumpInfo::Init() {
   for (const auto &stop_line : speed_bump_.position()) {
     SegmentsFromCurve(stop_line, &segments_);
   }
-  CHECK(!segments_.empty());
+  ACHECK(!segments_.empty());
 }
 
 OverlapInfo::OverlapInfo(const Overlap &overlap) : overlap_(overlap) {}
@@ -699,6 +696,20 @@ ParkingSpaceInfo::ParkingSpaceInfo(const ParkingSpace &parking_space)
 void ParkingSpaceInfo::Init() {
   polygon_ = ConvertToPolygon2d(parking_space_.polygon());
   CHECK_GT(polygon_.num_points(), 2);
+}
+
+PNCJunctionInfo::PNCJunctionInfo(const PNCJunction &pnc_junction)
+    : junction_(pnc_junction) {
+  Init();
+}
+
+void PNCJunctionInfo::Init() {
+  polygon_ = ConvertToPolygon2d(junction_.polygon());
+  CHECK_GT(polygon_.num_points(), 2);
+
+  for (const auto &overlap_id : junction_.overlap_id()) {
+    overlap_ids_.emplace_back(overlap_id);
+  }
 }
 
 }  // namespace hdmap

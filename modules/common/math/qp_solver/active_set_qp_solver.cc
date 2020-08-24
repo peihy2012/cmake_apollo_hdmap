@@ -23,7 +23,7 @@
 #include <climits>
 #include <vector>
 
-#include "modules/common/log.h"
+#include "cyber/common/log.h"
 #include "modules/common/math/qp_solver/qp_solver_gflags.h"
 
 namespace apollo {
@@ -39,9 +39,9 @@ ActiveSetQpSolver::ActiveSetQpSolver(
     : QpSolver(kernel_matrix, offset, affine_inequality_matrix,
                affine_inequality_boundary, affine_equality_matrix,
                affine_equality_boundary),
-      num_constraint_(affine_equality_matrix_.rows() +
-                      affine_inequality_matrix_.rows()),
-      num_param_(kernel_matrix.rows()),
+      num_constraint_(static_cast<int>(affine_equality_matrix_.rows() +
+                                       affine_inequality_matrix_.rows())),
+      num_param_(static_cast<int>(kernel_matrix.rows())),
       qp_eps_num_(FLAGS_default_active_set_eps_num),
       qp_eps_den_(FLAGS_default_active_set_eps_den),
       qp_eps_iter_ref_(FLAGS_default_active_set_eps_iter_ref),
@@ -71,11 +71,11 @@ bool ActiveSetQpSolver::Solve() {
     return false;
   }
   // definition of qpOASESproblem
-  const int kNumOfMatrixElements =
+  const auto kNumOfMatrixElements =
       kernel_matrix_.rows() * kernel_matrix_.cols();
   double h_matrix[kNumOfMatrixElements];  // NOLINT
 
-  const int kNumOfOffsetRows = offset_.rows();
+  const auto kNumOfOffsetRows = offset_.rows();
   double g_matrix[kNumOfOffsetRows];  // NOLINT
   int index = 0;
 
@@ -91,7 +91,7 @@ bool ActiveSetQpSolver::Solve() {
   double lower_bound[num_param_];  // NOLINT
   double upper_bound[num_param_];  // NOLINT
 
-  // TODO(fanhaoyang): Haoyang Fan change this to a configurable version
+  // TODO(All): change this to a configurable version
   for (int i = 0; i < num_param_; ++i) {
     lower_bound[i] = l_lower_bound_;
     upper_bound[i] = l_upper_bound_;
@@ -104,7 +104,7 @@ bool ActiveSetQpSolver::Solve() {
   index = 0;
 
   for (int r = 0; r < affine_equality_matrix_.rows(); ++r) {
-    // TODO(fanhaoyang): change to a configurable version
+    // TODO(All): change to a configurable version
     constraint_lower_bound[r] = affine_equality_boundary_(r, 0);
     constraint_upper_bound[r] = affine_equality_boundary_(r, 0);
 
@@ -121,7 +121,7 @@ bool ActiveSetQpSolver::Solve() {
     constraint_upper_bound[r + affine_equality_boundary_.rows()] =
         constraint_upper_bound_;
 
-    // TODO(fanhaoyang): change to a configurable version
+    // TODO(All): change to a configurable version
     for (int c = 0; c < num_param_; ++c) {
       affine_constraint_matrix[index++] = affine_inequality_matrix_(r, c);
     }

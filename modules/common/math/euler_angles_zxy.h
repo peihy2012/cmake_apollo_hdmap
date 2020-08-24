@@ -19,8 +19,7 @@
  * @brief Defines the EulerAnglesZXY class.
  */
 
-#ifndef MODULES_COMMON_MATH_EULER_ANGLES_ZXY_H_
-#define MODULES_COMMON_MATH_EULER_ANGLES_ZXY_H_
+#pragma once
 
 // TODO(all): should use Angle class internally.
 
@@ -72,10 +71,10 @@ class EulerAnglesZXY {
   EulerAnglesZXY() : roll_(0), pitch_(0), yaw_(0) {}
 
   /**
-    * @brief Constructs a rotation using only yaw (i.e., around the z-axis).
-    *
-    * @param yaw The yaw of the car
-    */
+   * @brief Constructs a rotation using only yaw (i.e., around the z-axis).
+   *
+   * @param yaw The yaw of the car
+   */
   explicit EulerAnglesZXY(T yaw) : roll_(0), pitch_(0), yaw_(yaw) {}
 
   /**
@@ -84,7 +83,7 @@ class EulerAnglesZXY {
    * @param roll The roll of the car
    * @param pitch The pitch of the car
    * @param yaw The yaw of the car
-  */
+   */
   EulerAnglesZXY(T roll, T pitch, T yaw)
       : roll_(roll), pitch_(pitch), yaw_(yaw) {}
 
@@ -97,11 +96,13 @@ class EulerAnglesZXY {
    * @param qz Quaternion z-coordinate
    */
   EulerAnglesZXY(T qw, T qx, T qy, T qz)
-      : roll_(std::atan2(2.0 * (qw * qy - qx * qz),
-                         2.0 * (Square<T>(qw) + Square<T>(qz)) - 1.0)),
-        pitch_(std::asin(2.0 * (qw * qx + qy * qz))),
-        yaw_(std::atan2(2.0 * (qw * qz - qx * qy),
-                        2.0 * (Square<T>(qw) + Square<T>(qy)) - 1.0)) {}
+      : roll_(std::atan2(static_cast<T>(2.0) * (qw * qy - qx * qz),
+                         static_cast<T>(2.0) * (Square<T>(qw) + Square<T>(qz)) -
+                             static_cast<T>(1.0))),
+        pitch_(std::asin(static_cast<T>(2.0) * (qw * qx + qy * qz))),
+        yaw_(std::atan2(static_cast<T>(2.0) * (qw * qz - qx * qy),
+                        static_cast<T>(2.0) * (Square<T>(qw) + Square<T>(qy)) -
+                            static_cast<T>(1.0))) {}
 
   /**
    * @brief Constructs a rotation from quaternion.
@@ -151,9 +152,10 @@ class EulerAnglesZXY {
    * @return Quaternion encoding this rotation.
    */
   Eigen::Quaternion<T> ToQuaternion() const {
-    T r = roll_ * 0.5;
-    T p = pitch_ * 0.5;
-    T y = yaw_ * 0.5;
+    T coeff = static_cast<T>(0.5);
+    T r = roll_ * coeff;
+    T p = pitch_ * coeff;
+    T y = yaw_ * coeff;
 
     T sr = std::sin(r);
     T sp = std::sin(p);
@@ -167,7 +169,9 @@ class EulerAnglesZXY {
     T qx = cr * sp * cy - sr * cp * sy;
     T qy = cr * sp * sy + sr * cp * cy;
     T qz = cr * cp * sy + sr * sp * cy;
-    if (qw < 0.0) return {-qw, -qx, -qy, -qz};
+    if (qw < 0.0) {
+      return {-qw, -qx, -qy, -qz};
+    }
     return {qw, qx, qy, qz};
   }
 
@@ -183,5 +187,3 @@ using EulerAnglesZXYd = EulerAnglesZXY<double>;
 }  // namespace math
 }  // namespace common
 }  // namespace apollo
-
-#endif /* MODULES_COMMON_MATH_EULER_ANGLES_ZXY_H_ */

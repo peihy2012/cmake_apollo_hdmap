@@ -20,8 +20,8 @@
 #include <cmath>
 #include <utility>
 
-#include "modules/common/log.h"
-// #include "modules/common/util/string_util.h"
+#include "absl/strings/str_cat.h"
+#include "cyber/common/log.h"
 
 #include "modules/common/math/math_utils.h"
 #include "modules/common/math/polygon2d.h"
@@ -127,9 +127,7 @@ void Box2d::GetAllCorners(std::vector<Vec2d> *const corners) const {
   *corners = corners_;
 }
 
-std::vector<Vec2d> Box2d::GetAllCorners() const {
-  return corners_;
-}
+std::vector<Vec2d> Box2d::GetAllCorners() const { return corners_; }
 
 bool Box2d::IsPointIn(const Vec2d &point) const {
   const double x0 = point.x() - center_.x();
@@ -172,8 +170,8 @@ bool Box2d::HasOverlap(const LineSegment2d &line_segment) const {
   }
   if (std::fmax(line_segment.start().x(), line_segment.end().x()) < min_x() ||
       std::fmin(line_segment.start().x(), line_segment.end().x()) > max_x() ||
-      std::fmax(line_segment.start().y(), line_segment.end().y()) < min_x() ||
-      std::fmin(line_segment.start().y(), line_segment.end().y()) > max_x()) {
+      std::fmax(line_segment.start().y(), line_segment.end().y()) < min_y() ||
+      std::fmin(line_segment.start().y(), line_segment.end().y()) > max_y()) {
     return false;
   }
   return DistanceTo(line_segment) <= kMathEpsilon;
@@ -268,8 +266,8 @@ double Box2d::DistanceTo(const LineSegment2d &line_segment) const {
         return 0.0;
     }
   }
-  CHECK(0) << "unimplemented state: " << gx1 << " " << gy1 << " " << gx2 << " "
-           << gy2;
+  ACHECK(0) << "unimplemented state: " << gx1 << " " << gy1 << " " << gx2 << " "
+            << gy2;
   return 0.0;
 }
 
@@ -345,11 +343,11 @@ void Box2d::LateralExtend(const double extension_length) {
   InitCorners();
 }
 
-// std::string Box2d::DebugString() const {
-//   return util::StrCat("box2d ( center = ", center_.DebugString(),
-//                       "  heading = ", heading_, "  length = ", length_,
-//                       "  width = ", width_, " )");
-// }
+std::string Box2d::DebugString() const {
+  return absl::StrCat("box2d ( center = ", center_.DebugString(),
+                      "  heading = ", heading_, "  length = ", length_,
+                      "  width = ", width_, " )");
+}
 
 }  // namespace math
 }  // namespace common

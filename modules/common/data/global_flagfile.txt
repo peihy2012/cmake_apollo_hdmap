@@ -5,14 +5,14 @@
 # 3. To override the flag values, you must set it after this file, as all Flags
 #    are evaluated strictly in order.
 
---vehicle_config_path=/apollo/modules/common/data/microcar_config.pb.txt
---local_utm_zone_id=50
+--vehicle_config_path=/apollo/modules/common/data/vehicle_param.pb.txt
+
 --log_dir=/apollo/data/log
---use_navigation_mode=0
---map_dir=/apollo/modules/map/data/demo
 
---use_navigation_mode=1
+--use_navigation_mode=false
 
---use_navigation_mode=0
+--map_dir=/apollo/modules/map/data/sunnyvale
 
---use_navigation_mode=1
+--use_sim_time=false
+
+--use_cyber_time=true

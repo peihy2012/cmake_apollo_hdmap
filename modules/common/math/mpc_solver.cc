@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "modules/common/log.h"
+#include "cyber/common/log.h"
 #include "modules/common/math/qp_solver/active_set_qp_solver.h"
 #include "modules/common/math/qp_solver/qp_solver.h"
 
@@ -35,7 +35,9 @@ bool SolveLinearMPC(const Matrix &matrix_a, const Matrix &matrix_b,
                     const Matrix &matrix_upper,
                     const Matrix &matrix_initial_state,
                     const std::vector<Matrix> &reference, const double eps,
-                    const int max_iter, std::vector<Matrix> *control) {
+                    const int max_iter, std::vector<Matrix> *control,
+                    std::vector<Matrix> *control_gain,
+                    std::vector<Matrix> *addition_gain) {
   if (matrix_a.rows() != matrix_a.cols() ||
       matrix_b.rows() != matrix_a.rows() ||
       matrix_lower.rows() != matrix_upper.rows()) {
@@ -43,33 +45,33 @@ bool SolveLinearMPC(const Matrix &matrix_a, const Matrix &matrix_b,
     return false;
   }
 
-  unsigned int horizon = reference.size();
+  size_t horizon = static_cast<size_t>(reference.size());
 
   // Update augment reference matrix_t
   Matrix matrix_t = Matrix::Zero(matrix_b.rows() * horizon, 1);
-  for (unsigned int j = 0; j < horizon; ++j) {
+  for (size_t j = 0; j < horizon; ++j) {
     matrix_t.block(j * reference[0].size(), 0, reference[0].size(), 1) =
         reference[j];
   }
 
   // Update augment control matrix_v
   Matrix matrix_v = Matrix::Zero((*control)[0].rows() * horizon, 1);
-  for (unsigned int j = 0; j < horizon; ++j) {
+  for (size_t j = 0; j < horizon; ++j) {
     matrix_v.block(j * (*control)[0].rows(), 0, (*control)[0].rows(), 1) =
         (*control)[j];
   }
 
   std::vector<Matrix> matrix_a_power(horizon);
   matrix_a_power[0] = matrix_a;
-  for (unsigned int i = 1; i < matrix_a_power.size(); ++i) {
+  for (size_t i = 1; i < matrix_a_power.size(); ++i) {
     matrix_a_power[i] = matrix_a * matrix_a_power[i - 1];
   }
 
   Matrix matrix_k =
       Matrix::Zero(matrix_b.rows() * horizon, matrix_b.cols() * horizon);
   matrix_k.block(0, 0, matrix_b.rows(), matrix_b.cols()) = matrix_b;
-  for (unsigned int r = 1; r < horizon; ++r) {
-    for (unsigned int c = 0; c < r; ++c) {
+  for (size_t r = 1; r < horizon; ++r) {
+    for (size_t c = 0; c < r; ++c) {
       matrix_k.block(r * matrix_b.rows(), c * matrix_b.cols(), matrix_b.rows(),
                      matrix_b.cols()) = matrix_a_power[r - c - 1] * matrix_b;
     }
@@ -87,7 +89,7 @@ bool SolveLinearMPC(const Matrix &matrix_a, const Matrix &matrix_b,
   Matrix matrix_aa = Matrix::Zero(horizon * matrix_a.rows(), matrix_a.cols());
   matrix_aa.block(0, 0, matrix_a.rows(), matrix_a.cols()) = matrix_a;
 
-  for (unsigned int i = 1; i < horizon; ++i) {
+  for (size_t i = 1; i < horizon; ++i) {
     matrix_aa.block(i * matrix_a.rows(), 0, matrix_a.rows(), matrix_a.cols()) =
         matrix_a * matrix_aa.block((i - 1) * matrix_a.rows(), 0,
                                    matrix_a.rows(), matrix_a.cols());
@@ -95,14 +97,14 @@ bool SolveLinearMPC(const Matrix &matrix_a, const Matrix &matrix_b,
 
   // Compute matrix_m
   matrix_m.block(0, 0, matrix_a.rows(), 1) = matrix_a * matrix_initial_state;
-  for (unsigned int i = 1; i < horizon; ++i) {
+  for (size_t i = 1; i < horizon; ++i) {
     matrix_m.block(i * matrix_a.rows(), 0, matrix_a.rows(), 1) =
         matrix_a *
         matrix_m.block((i - 1) * matrix_a.rows(), 0, matrix_a.rows(), 1);
   }
 
   // Compute matrix_ll, matrix_uu, matrix_qq, matrix_rr
-  for (unsigned int i = 0; i < horizon; ++i) {
+  for (size_t i = 0; i < horizon; ++i) {
     matrix_ll.block(i * (*control)[0].rows(), 0, (*control)[0].rows(), 1) =
         matrix_lower;
     matrix_uu.block(i * (*control)[0].rows(), 0, (*control)[0].rows(), 1) =
@@ -114,7 +116,7 @@ bool SolveLinearMPC(const Matrix &matrix_a, const Matrix &matrix_b,
   }
 
   matrix_cc.block(0, 0, matrix_c.rows(), 1) = matrix_c;
-  for (unsigned int i = 1; i < horizon; ++i) {
+  for (size_t i = 1; i < horizon; ++i) {
     matrix_cc.block(i * matrix_c.rows(), 0, matrix_c.rows(), 1) =
         matrix_cc.block((i - 1) * matrix_c.rows(), 0, matrix_c.rows(), 1) +
         matrix_aa.block((i - 1) * matrix_a.rows(), 0, matrix_a.rows(),
@@ -122,10 +124,17 @@ bool SolveLinearMPC(const Matrix &matrix_a, const Matrix &matrix_b,
             matrix_c;
   }
 
-  // Update matrix_m1, matrix_m2, convert MPC problem to QP problem done
-  Matrix matrix_m1 = matrix_k.transpose() * matrix_qq * matrix_k + matrix_rr;
-  Matrix matrix_m2 =
-      matrix_k.transpose() * matrix_qq * (matrix_m + matrix_cc - matrix_t);
+  // Update matrix_m1, matrix_m2, convert MPC problem to QP problem
+  const Matrix matrix_m1 = static_cast<Matrix>(
+      matrix_k.transpose() * matrix_qq * matrix_k + matrix_rr);
+  const Matrix matrix_m2 = static_cast<Matrix>(
+      matrix_k.transpose() * matrix_qq * (matrix_m + matrix_cc - matrix_t));
+  // Update matrix_m0, matrix_ctrl_gain, matrix_add_gain, obtain the analytical
+  // control gain matrix, corresponding to the unconstrained QP problem
+  const Matrix matrix_m0 = static_cast<Matrix>(
+      -1 * matrix_m1.inverse() * matrix_k.transpose() * matrix_qq);
+  const Matrix matrix_ctrl_gain = static_cast<Matrix>(matrix_m0 * matrix_aa);
+  const Matrix matrix_add_gain = static_cast<Matrix>(matrix_m0 * matrix_cc);
 
   // Format in qp_solver
   /**
@@ -163,10 +172,22 @@ bool SolveLinearMPC(const Matrix &matrix_a, const Matrix &matrix_b,
   }
   matrix_v = qp_solver->params();
 
-  for (unsigned int i = 0; i < horizon; ++i) {
+  for (size_t i = 0; i < horizon; ++i) {
     (*control)[i] =
         matrix_v.block(i * (*control)[0].rows(), 0, (*control)[0].rows(), 1);
   }
+
+  for (size_t i = 0; i < horizon; ++i) {
+    (*control_gain)[i] = matrix_ctrl_gain.block(i * (*control_gain)[0].rows(),
+                                                0, (*control_gain)[0].rows(),
+                                                (*control_gain)[0].cols());
+  }
+
+  for (size_t i = 0; i < horizon; ++i) {
+    (*addition_gain)[i] = matrix_add_gain.block(
+        i * (*addition_gain)[0].rows(), 0, (*addition_gain)[0].rows(), 1);
+  }
+
   return true;
 }
 

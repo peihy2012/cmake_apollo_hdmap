@@ -12,15 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 =========================================================================*/
-#ifndef MODULES_MAP_HDMAP_ADAPTER_XML_PARSER_STATUS_H_
-#define MODULES_MAP_HDMAP_ADAPTER_XML_PARSER_STATUS_H_
-
-#include <cstddef>
-#include <ostream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <iostream>
+#pragma once
 
 #include "modules/common/status/status.h"
 
@@ -30,14 +22,12 @@ namespace adapter {
 
 using apollo::common::Status;
 
-#define RETURN_IF_ERROR(expr)                            \
-  do {                                                   \
-    const apollo::common::Status status_ = (expr);         \
-    if (!status_.ok()) return status_; \
+#define RETURN_IF_ERROR(expr)                      \
+  do {                                             \
+    const apollo::common::Status status_ = (expr); \
+    if (!status_.ok()) return status_;             \
   } while (0)
 
 }  // namespace adapter
 }  // namespace hdmap
 }  // namespace apollo
-
-#endif  // MODULES_MAP_HDMAP_ADAPTER_XML_PARSER_STATUS_H_

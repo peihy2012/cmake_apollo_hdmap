@@ -18,8 +18,7 @@
  * @brief Convert mpc problem to qp based problem and solve.
  */
 
-#ifndef MODULES_CONTROL_COMMON_MPC_SOLVER_H_
-#define MODULES_CONTROL_COMMON_MPC_SOLVER_H_
+#pragma once
 
 #include <vector>
 
@@ -54,10 +53,10 @@ bool SolveLinearMPC(
     const Eigen::MatrixXd &matrix_upper,
     const Eigen::MatrixXd &matrix_initial_state,
     const std::vector<Eigen::MatrixXd> &reference, const double eps,
-    const int max_iter, std::vector<Eigen::MatrixXd> *control);
+    const int max_iter, std::vector<Eigen::MatrixXd> *control,
+    std::vector<Eigen::MatrixXd> *control_gain,
+    std::vector<Eigen::MatrixXd> *addition_gain);
 
 }  // namespace math
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_CONTROL_COMMON_MPC_SOLVER_H_

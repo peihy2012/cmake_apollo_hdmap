@@ -19,7 +19,7 @@
 #include "gflags/gflags.h"
 #include "gtest/gtest.h"
 
-#include "modules/common/util/file.h"
+#include "cyber/common/file.h"
 #include "modules/map/hdmap/hdmap_util.h"
 
 namespace apollo {
@@ -38,7 +38,7 @@ class RouteSegmentsTest : public ::testing::Test {
     AINFO << "map file: " << FLAGS_test_map_file;
     if (hdmap_.LoadMapFromFile(FLAGS_test_map_file) != 0) {
       AERROR << "Failed to load map: " << FLAGS_test_map_file;
-      CHECK(false);
+      ACHECK(false);
     }
   }
 

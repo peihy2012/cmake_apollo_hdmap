@@ -24,10 +24,8 @@
 //   absolute (x,y,z) is still correct. Then we can find the nearest point on
 //   the new map as the new end point.
 
-#include <string>
-
-#include "modules/common/log.h"
-#include "modules/common/util/file.h"
+#include "cyber/common/file.h"
+#include "cyber/common/log.h"
 #include "modules/map/hdmap/hdmap_util.h"
 #include "modules/routing/proto/poi.pb.h"
 #include "modules/routing/proto/routing.pb.h"
@@ -38,15 +36,15 @@ namespace hdmap {
 apollo::common::PointENU SLToXYZ(const std::string& lane_id, const double s,
                                  const double l) {
   const auto lane_info = HDMapUtil::BaseMap().GetLaneById(MakeMapId(lane_id));
-  CHECK(lane_info);
+  ACHECK(lane_info);
   return lane_info->GetSmoothPoint(s);
 }
 
 void XYZToSL(const apollo::common::PointENU& point, std::string* lane_id,
              double* s, double* l) {
-  CHECK(lane_id);
-  CHECK(s);
-  CHECK(l);
+  ACHECK(lane_id);
+  ACHECK(s);
+  ACHECK(l);
   LaneInfoConstPtr lane = nullptr;
 
   CHECK_EQ(HDMapUtil::BaseMap().GetNearestLane(point, &lane, s, l), 0);
@@ -63,8 +61,7 @@ double XYZDistance(const apollo::common::PointENU& p1,
 
 void RefreshDefaultEndPoint() {
   apollo::routing::POI old_poi;
-  CHECK(
-      apollo::common::util::GetProtoFromASCIIFile(EndWayPointFile(), &old_poi));
+  ACHECK(cyber::common::GetProtoFromASCIIFile(EndWayPointFile(), &old_poi));
 
   apollo::routing::POI new_poi;
   for (const auto& old_landmark : old_poi.landmark()) {
@@ -104,7 +101,7 @@ void RefreshDefaultEndPoint() {
             << XYZDistance(old_xyz, new_xyz);
     }
   }
-  CHECK(apollo::common::util::SetProtoToASCIIFile(new_poi, EndWayPointFile()));
+  ACHECK(cyber::common::SetProtoToASCIIFile(new_poi, EndWayPointFile()));
 }
 
 }  // namespace hdmap

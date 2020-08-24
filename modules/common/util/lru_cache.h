@@ -14,8 +14,7 @@
  * limitations under the License.
  *****************************************************************************/
 
-#ifndef MODULES_COMMON_UTIL_LRU_CACHE_H_
-#define MODULES_COMMON_UTIL_LRU_CACHE_H_
+#pragma once
 
 #include <iostream>
 #include <mutex>
@@ -46,11 +45,7 @@ struct Node {
 template <class K, class V>
 class LRUCache {
  public:
-  LRUCache() : capacity_(kDefaultCapacity), map_(0), head_(), tail_() {
-    Init();
-  }
-
-  explicit LRUCache(const size_t capacity)
+  explicit LRUCache(const size_t capacity = kDefaultCapacity)
       : capacity_(capacity), map_(0), head_(), tail_() {
     Init();
   }
@@ -59,7 +54,7 @@ class LRUCache {
 
   void GetCache(std::unordered_map<K, V>* cache) {
     for (auto it = map_.begin(); it != map_.end(); ++it) {
-      cache->operator[](it->first) = it->second.val;
+      cache->emplace(it->first, it->second.val);
     }
   }
 
@@ -136,11 +131,11 @@ class LRUCache {
 
   V* Get(const K& key) { return Get(key, false); }
 
-  bool GetCopySilently(const K& key, const V* val) {
+  bool GetCopySilently(const K& key, V* const val) {
     return GetCopy(key, val, true);
   }
 
-  bool GetCopy(const K& key, const V* val) { return GetCopy(key, val, false); }
+  bool GetCopy(const K& key, V* const val) { return GetCopy(key, val, false); }
 
   size_t size() { return size_; }
 
@@ -253,7 +248,7 @@ class LRUCache {
     return nullptr;
   }
 
-  bool GetCopy(const K& key, const V* val, bool silent) {
+  bool GetCopy(const K& key, V* const val, bool silent) {
     if (Contains(key)) {
       auto* node = &map_[key];
       if (!silent) {
@@ -281,5 +276,3 @@ class LRUCache {
 }  // namespace util
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_COMMON_UTIL_LRU_CACHE_H_

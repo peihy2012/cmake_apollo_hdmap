@@ -19,15 +19,15 @@
  * @brief Defines the Factory class.
  */
 
-#ifndef MODULES_COMMON_UTIL_FACTORY_H_
-#define MODULES_COMMON_UTIL_FACTORY_H_
+#pragma once
 
 #include <map>
 #include <memory>
 #include <utility>
 
-#include "modules/common/log.h"
-#include "modules/common/macro.h"
+#include "cyber/common/macros.h"
+
+#include "cyber/common/log.h"
 
 /**
  * @namespace apollo::common::util
@@ -65,10 +65,14 @@ class Factory {
    * @param id Identifier of the class being registered
    * @param creator Function returning a pointer to an instance of
    * the registered class
-   * @return True iff the key id is still available
+   * @return True if the key id is still available
    */
   bool Register(const IdentifierType &id, ProductCreator creator) {
     return producers_.insert(std::make_pair(id, creator)).second;
+  }
+
+  bool Contains(const IdentifierType &id) {
+    return producers_.find(id) != producers_.end();
   }
 
   /**
@@ -79,11 +83,13 @@ class Factory {
     return producers_.erase(id) == 1;
   }
 
+  void Clear() { producers_.clear(); }
+
   bool Empty() const { return producers_.empty(); }
 
   /**
    * @brief Creates and transfers membership of an object of type matching id.
-   * Need to register id before CreateObject is called. May return NULL
+   * Need to register id before CreateObject is called. May return nullptr
    * silently.
    * @param id The identifier of the class we which to instantiate
    * @param args the object construction arguments
@@ -120,5 +126,3 @@ class Factory {
 }  // namespace util
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_COMMON_UTIL_FACTORY_H_

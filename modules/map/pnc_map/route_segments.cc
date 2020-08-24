@@ -29,8 +29,8 @@ namespace hdmap {
 namespace {
 
 // Minimum error in lane segmentation.
-const double kSegmentationEpsilon = 0.2;
-}
+constexpr double kSegmentationEpsilon = 0.2;
+}  // namespace
 
 const std::string &RouteSegments::Id() const { return id_; }
 
@@ -179,11 +179,24 @@ bool RouteSegments::Shrink(const common::math::Vec2d &point,
   common::SLPoint sl_point;
   LaneWaypoint waypoint;
   if (!GetProjection(point, &sl_point, &waypoint)) {
-    // AERROR << "failed to project " << point.DebugString() << " to segment";
-    AERROR << "failed to project  to segment";
+    AERROR << "failed to project " << point.DebugString() << " to segment";
     return false;
   }
-  const double s = sl_point.s();
+  return Shrink(sl_point.s(), look_backward, look_forward);
+}
+
+bool RouteSegments::Shrink(const double s, const double look_backward,
+                           const double look_forward) {
+  LaneWaypoint waypoint;
+  if (!GetWaypoint(s, &waypoint)) {
+    return false;
+  }
+  return Shrink(s, waypoint, look_backward, look_forward);
+}
+
+bool RouteSegments::Shrink(const double s, const LaneWaypoint &waypoint,
+                           const double look_backward,
+                           const double look_forward) {
   double acc_s = 0.0;
   auto iter = begin();
   while (iter != end() && acc_s + iter->Length() < s - look_backward) {
@@ -228,18 +241,40 @@ bool RouteSegments::Shrink(const common::math::Vec2d &point,
   return true;
 }
 
+bool RouteSegments::GetWaypoint(const double s, LaneWaypoint *waypoint) const {
+  double accumulated_s = 0.0;
+  bool has_projection = false;
+  for (auto iter = begin(); iter != end();
+       accumulated_s += (iter->end_s - iter->start_s), ++iter) {
+    if (accumulated_s - kSegmentationEpsilon < s &&
+        s < accumulated_s + iter->end_s - iter->start_s +
+                kSegmentationEpsilon) {
+      waypoint->lane = iter->lane;
+      waypoint->s = s - accumulated_s + iter->start_s;
+      if (waypoint->s < iter->start_s) {
+        waypoint->s = iter->start_s;
+      } else if (waypoint->s > iter->end_s) {
+        waypoint->s = iter->end_s;
+      }
+      has_projection = true;
+      break;
+    }
+  }
+  return has_projection;
+}
+
 bool RouteSegments::GetProjection(const common::math::Vec2d &point,
                                   common::SLPoint *sl_point,
                                   LaneWaypoint *waypoint) const {
   double min_l = std::numeric_limits<double>::infinity();
-  double accumulate_s = 0.0;
+  double accumulated_s = 0.0;
   bool has_projection = false;
   for (auto iter = begin(); iter != end();
-       accumulate_s += (iter->end_s - iter->start_s), ++iter) {
+       accumulated_s += (iter->end_s - iter->start_s), ++iter) {
     double lane_s = 0.0;
     double lane_l = 0.0;
     if (!iter->lane->GetProjection(point, &lane_s, &lane_l)) {
-      AERROR << "Failed to get projection from point "  // << point.DebugString()
+      AERROR << "Failed to get projection from point " << point.DebugString()
              << " on lane " << iter->lane->id().id();
       return false;
     }
@@ -253,7 +288,7 @@ bool RouteSegments::GetProjection(const common::math::Vec2d &point,
       lane_s = std::min(iter->end_s, lane_s);
       min_l = std::fabs(lane_l);
       sl_point->set_l(lane_l);
-      sl_point->set_s(lane_s - iter->start_s + accumulate_s);
+      sl_point->set_s(lane_s - iter->start_s + accumulated_s);
       waypoint->lane = iter->lane;
       waypoint->s = lane_s;
     }
@@ -299,10 +334,10 @@ bool RouteSegments::CanDriveFrom(const LaneWaypoint &waypoint) const {
   common::SLPoint route_sl;
   bool has_projection = GetProjection(point, &route_sl, &segment_waypoint);
   if (!has_projection) {
-    AERROR << "No projection from waypoint: "; //  << waypoint.DebugString();
+    AERROR << "No projection from waypoint: " << waypoint.DebugString();
     return false;
   }
-  constexpr double kMaxLaneWidth = 10.0;
+  static constexpr double kMaxLaneWidth = 10.0;
   if (std::fabs(route_sl.l()) > 2 * kMaxLaneWidth) {
     return false;
   }

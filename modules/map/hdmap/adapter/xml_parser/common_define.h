@@ -12,13 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 =========================================================================*/
-#ifndef MODULES_MAP_HDMAP_ADAPTER_XML_PARSER_COMMON_DEFINE_H_
-#define MODULES_MAP_HDMAP_ADAPTER_XML_PARSER_COMMON_DEFINE_H_
+#pragma once
 
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include "modules/common/log.h"
+
+#include "cyber/common/log.h"
 #include "modules/map/proto/map.pb.h"
 
 namespace apollo {
@@ -52,11 +52,18 @@ using PbLaneBoundaryTypeType = apollo::hdmap::LaneBoundaryType_Type;
 using PbPolygon = apollo::hdmap::Polygon;
 using PbBoundaryPolygon = apollo::hdmap::BoundaryPolygon;
 using PbBoundaryEdge = apollo::hdmap::BoundaryEdge;
+using PbRegionOverlap = apollo::hdmap::RegionOverlapInfo;
+using PbPNCJunction = apollo::hdmap::PNCJunction;
 
 using PbLaneDirection = apollo::hdmap::Lane_LaneDirection;
 using PbSignalType = apollo::hdmap::Signal_Type;
 using PbSubSignalType = apollo::hdmap::Subsignal_Type;
+using PbStopSignType = apollo::hdmap::StopSign_StopType;
 using PbBoundaryEdgeType = apollo::hdmap::BoundaryEdge_Type;
+using PbRoadType = apollo::hdmap::Road_Type;
+using PbSignInfoType = apollo::hdmap::SignInfo::Type;
+using PbPassageType = apollo::hdmap::Passage_Type;
+using PbPassageGroup = apollo::hdmap::PassageGroup;
 
 struct StopLineInternal {
   std::string id;
@@ -87,7 +94,8 @@ struct OverlapWithLane {
   double end_s;
   bool is_merge;
 
-  OverlapWithLane() : is_merge(false) {}
+  std::string region_overlap_id;
+  std::vector<PbRegionOverlap> region_overlaps;
 };
 
 struct OverlapWithJunction {
@@ -121,6 +129,8 @@ struct RoadInternal {
   bool in_junction;
   std::string junction_id;
 
+  std::string type;
+
   std::vector<RoadSectionInternal> sections;
 
   std::vector<TrafficLightInternal> traffic_lights;
@@ -131,6 +141,7 @@ struct RoadInternal {
   std::vector<PbSpeedBump> speed_bumps;
   std::vector<StopLineInternal> stop_lines;
   std::vector<PbParkingSpace> parking_spaces;
+  std::vector<PbPNCJunction> pnc_junctions;
 
   RoadInternal() : in_junction(false) { junction_id = ""; }
 };
@@ -138,5 +149,3 @@ struct RoadInternal {
 }  // namespace adapter
 }  // namespace hdmap
 }  // namespace apollo
-
-#endif  // MODULES_MAP_HDMAP_ADAPTER_XML_PARSER_COMMON_DEFINE_H_

@@ -18,13 +18,13 @@
  * @file
  */
 
-#ifndef MODULES_COMMON_STATUS_STATUS_H_
-#define MODULES_COMMON_STATUS_STATUS_H_
+#pragma once
 
 #include <string>
 
 #include "google/protobuf/descriptor.h"
 #include "modules/common/proto/error_code.pb.h"
+#include "modules/common/util/future.h"
 
 /**
  * @namespace apollo::common
@@ -39,28 +39,19 @@ namespace common {
  * @brief A general class to denote the return status of an API call. It
  * can either be an OK status for success, or a failure status with error
  * message and error code enum.
-*/
+ */
 class Status {
  public:
-  /**
-   * @brief Create a success status.
-   */
-  Status() : code_(ErrorCode::OK), msg_() {}
-  ~Status() = default;
-
   /**
    * @brief Create a status with the specified error code and msg as a
    * human-readable string containing more detailed information.
    * @param code the error code.
    * @param msg the message associated with the error.
    */
-  Status(ErrorCode code, const std::string &msg) : code_(code), msg_(msg) {}
+  explicit Status(ErrorCode code = ErrorCode::OK, std::string_view msg = "")
+      : code_(code), msg_(msg.data()) {}
 
-  /**
-   * @brief Create a status with the specified error code and empty msg
-   * @param code the error code.
-   */
-  explicit Status(ErrorCode code) : code_(code), msg_("") {}
+  ~Status() = default;
 
   /**
    * @brief generate a success status.
@@ -137,5 +128,3 @@ inline std::ostream &operator<<(std::ostream &os, const Status &s) {
 
 }  // namespace common
 }  // namespace apollo
-
-#endif  // MODULES_COMMON_STATUS_STATUS_H_

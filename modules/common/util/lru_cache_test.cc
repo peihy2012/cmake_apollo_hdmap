@@ -15,7 +15,9 @@
  *****************************************************************************/
 
 #include "modules/common/util/lru_cache.h"
+
 #include <vector>
+
 #include "gtest/gtest.h"
 
 namespace apollo {
@@ -62,7 +64,7 @@ TEST(LRUCache, UAF) {
   }
   EXPECT_EQ(2, cache.size());
   Node<int, int>* curr = cache.First();
-  EXPECT_TRUE(curr != nullptr);
+  EXPECT_NE(curr, nullptr);
   for (size_t i = 0; i < 2; ++i) {
     EXPECT_EQ(curr->key, keys[1 - i]);
     EXPECT_EQ(curr->val, vals[1 - i]);
@@ -73,7 +75,7 @@ TEST(LRUCache, UAF) {
   cache.Put(keys[2], vals[2]);
   EXPECT_EQ(1, cache.size());
   curr = cache.First();
-  EXPECT_TRUE(curr != nullptr);
+  EXPECT_NE(curr, nullptr);
   for (int i = 2; i < 3; ++i) {
     EXPECT_EQ(curr->key, keys[i]);
     EXPECT_EQ(curr->val, vals[i]);

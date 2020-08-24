@@ -1,3 +1,4 @@
+load("//tools:cpplint.bzl", "cpplint")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -30,14 +31,14 @@ cc_library(
         "xml_parser/util_xml_parser.h",
     ],
     deps = [
-        "//modules/common:log",
+        "//cyber/common:log",
         "//modules/common/math",
         "//modules/common/status",
         "//modules/common/util",
         "//modules/map/proto:map_proto",
-        "@proj4//:proj4",
-        "@tinyxml2//:tinyxml2",
+        "@proj4",
+        "@tinyxml2",
     ],
 )
 
-
+cpplint()
