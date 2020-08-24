@@ -173,7 +173,6 @@ add_library (hdmap SHARED
 	# modules/routing/common/routing_gflags.cc
 )
 
-
 target_link_libraries(hdmap
 	${Boost_LIBRARIES}
 	pnc_cuda_util
@@ -202,8 +201,22 @@ add_executable(test_map
     example/test_map.cc
 )
 
-
 target_link_libraries(test_map
+	${OpenCV_LIBS}
+	${Boost_LIBRARIES}
+	hdmap
+	tinyxml2
+	proj
+	${Protobuf_LIBRARIES}
+	glog
+	gflags
+)
+
+add_executable(test_path
+    example/test_path.cc
+)
+
+target_link_libraries(test_path
 	${OpenCV_LIBS}
 	${Boost_LIBRARIES}
 	hdmap
@@ -229,7 +242,6 @@ install(DIRECTORY include
 	PATTERN "*.h"
   PERMISSIONS OWNER_READ GROUP_READ
 )
-
 
 install(TARGETS hdmap 
 	RUNTIME DESTINATION bin
